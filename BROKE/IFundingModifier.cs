@@ -5,7 +5,7 @@ using System.Text;
 
 namespace BROKE
 {
-    interface IFundingModifier
+    public interface IFundingModifier
     {
         /// <summary>
         /// The name of the Funding Modifier (ie, Crew Payroll, Government Funding, etc)

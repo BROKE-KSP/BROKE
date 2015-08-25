@@ -20,6 +20,18 @@ namespace BROKE
         string GetConfigName();
 
         /// <summary>
+        /// Determine if the FundingModifier should have processing applied
+        /// </summary>
+        /// <returns>Whether the FundingModifier is enabled</returns>
+        bool isEnabled();
+
+        /// <summary>
+        /// Enable or disable the FundingModifier
+        /// </summary>
+        /// <param name="enabled"></param>
+        void SetEnabled(bool enabled);
+
+        /// <summary>
         /// Return the funds gained and lost for this Quarter. The returned values will be added/removed by B.R.O.K.E. so there is no need to do that yourself.
         /// </summary>
         /// <returns>double[2] income, expenses</returns>

@@ -9,6 +9,7 @@ namespace BROKE
 {
     class FundingModTest : IFundingModifier
     {
+        private bool enabled = true;
         public FundingModTest()
         {
             Debug.Log("[BROKE] Instantiating test funding modifier!");
@@ -22,6 +23,16 @@ namespace BROKE
         public string GetConfigName()
         {
             return "TestFundMod";
+        }
+
+        public bool isEnabled()
+        {
+            return enabled;
+        }
+
+        public void SetEnabled(bool en)
+        {
+            enabled = en;
         }
 
         public double[] ProcessYearly() {

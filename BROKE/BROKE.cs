@@ -86,7 +86,10 @@ namespace BROKE
             LogFormatted_DebugOnly("New Day! " + KSPUtil.PrintDate((int)Planetarium.GetUniversalTime(), true, true));
             foreach(IFundingModifier fundingMod in fundingModifiers)
             {
-                fundingMod.DailyUpdate();
+                if (fundingMod.isEnabled())
+                {
+                    fundingMod.DailyUpdate();
+                }
             }
         }
 
@@ -97,9 +100,12 @@ namespace BROKE
             ResetFundingDictionaries();
             foreach (IFundingModifier fundingMod in fundingModifiers)
             {
-                double[] results = fundingMod.ProcessQuarterly();
-                AddOrCreateInDictionary(Revenue, fundingMod.GetName(), results[0]);
-                AddOrCreateInDictionary(Expenses, fundingMod.GetName(), results[1]);
+                if (fundingMod.isEnabled())
+                {
+                    double[] results = fundingMod.ProcessQuarterly();
+                    AddOrCreateInDictionary(Revenue, fundingMod.GetName(), results[0]);
+                    AddOrCreateInDictionary(Expenses, fundingMod.GetName(), results[1]);
+                }
             }
         }
 
@@ -109,9 +115,12 @@ namespace BROKE
             LogFormatted_DebugOnly("New Year! " + KSPUtil.PrintDate((int)Planetarium.GetUniversalTime(), true, true));
             foreach (IFundingModifier fundingMod in fundingModifiers)
             {
-                double[] results = fundingMod.ProcessYearly();
-                AddOrCreateInDictionary(Revenue, fundingMod.GetName(), results[0]);
-                AddOrCreateInDictionary(Expenses, fundingMod.GetName(), results[1]);
+                if (fundingMod.isEnabled())
+                {
+                    double[] results = fundingMod.ProcessYearly();
+                    AddOrCreateInDictionary(Revenue, fundingMod.GetName(), results[0]);
+                    AddOrCreateInDictionary(Expenses, fundingMod.GetName(), results[1]);
+                }
             }
         }
 

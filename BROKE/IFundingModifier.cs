@@ -20,16 +20,14 @@ namespace BROKE
         string GetConfigName();
 
         /// <summary>
-        /// Determine if the FundingModifier should have processing applied
+        /// Called when the FundingModifier is switched from Enabled to Disabled
         /// </summary>
-        /// <returns>Whether the FundingModifier is enabled</returns>
-        bool isEnabled();
+        void OnDisabled();
 
         /// <summary>
-        /// Enable or disable the FundingModifier
+        /// Called when the FundingModifier is switched from Disabled to Enabled
         /// </summary>
-        /// <param name="enabled"></param>
-        void SetEnabled(bool enabled);
+        void OnEnabled();
 
         /// <summary>
         /// Return the funds gained and lost for this Quarter. The returned values will be added/removed by B.R.O.K.E. so there is no need to do that yourself.
@@ -63,5 +61,27 @@ namespace BROKE
         /// <param name="node">Source ConfigNode containing any pertinent information</param>
         void LoadData(ConfigNode node);
 
+
+        /// <summary>
+        /// Is true when the FM has a GUI for changing settings
+        /// </summary>
+        /// <returns>True if has a Settings GUI</returns>
+        bool hasSettingsGUI();
+
+        /// <summary>
+        /// Draws the Settings GUI elements
+        /// </summary>
+        void DrawSettingsGUI();
+
+        /// <summary>
+        /// Is true if the FM has a *main* GUI that expands on the info in an Expense Report
+        /// </summary>
+        /// <returns>True if has a GUI</returns>
+        bool hasMainGUI();
+
+        /// <summary>
+        /// Draws the main GUI, an extension of the Expense Report
+        /// </summary>
+        void DrawMainGUI();
     }
 }

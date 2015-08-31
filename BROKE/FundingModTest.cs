@@ -9,7 +9,6 @@ namespace BROKE
 {
     class FundingModTest : IFundingModifier
     {
-        private bool enabled = true;
         public FundingModTest()
         {
             Debug.Log("[BROKE] Instantiating test funding modifier!");
@@ -17,7 +16,7 @@ namespace BROKE
 
         public string GetName()
         {
-            return "Test Funding Modifier";
+            return "Test Funding";
         }
 
         public string GetConfigName()
@@ -25,14 +24,14 @@ namespace BROKE
             return "TestFundMod";
         }
 
-        public bool isEnabled()
+        public void OnEnabled()
         {
-            return enabled;
+            Debug.Log("[BROKE] Enabled!");
         }
 
-        public void SetEnabled(bool en)
+        public void OnDisabled()
         {
-            enabled = en;
+            Debug.Log("[BROKE] Disabled!");
         }
 
         public double[] ProcessYearly() {
@@ -50,5 +49,18 @@ namespace BROKE
         public void LoadData(ConfigNode node) { }
 
         public ConfigNode SaveData() { return null; }
+
+        public bool hasSettingsGUI()
+        {
+            return false;
+        }
+
+        public bool hasMainGUI()
+        {
+            return true;
+        }
+
+        public void DrawSettingsGUI() { }
+        public void DrawMainGUI() { GUILayout.Label("Hello, World!"); }
     }
 }

@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{E2401369-D01C-4195-920A-5106C7A4079C}</ProjectGuid>
+    <ProjectGuid>{0B28E1E1-9452-4154-B25D-33C81733CE49}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>BROKE</RootNamespace>
-    <AssemblyName>BROKE</AssemblyName>
+    <RootNamespace>BROKEExampleFundingModifier</RootNamespace>
+    <AssemblyName>BROKEExampleFundingModifier</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
@@ -45,15 +45,14 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BROKE.cs" />
-    <Compile Include="BROKE_Data.cs" />
-    <Compile Include="IFundingModifier.cs" />
-    <Compile Include="KSPPluginFramework\ConfigNodeStorage.cs" />
-    <Compile Include="KSPPluginFramework\ExtensionsUnity.cs" />
-    <Compile Include="KSPPluginFramework\MonoBehaviourExtended.cs" />
-    <Compile Include="KSPPluginFramework\MonoBehaviourWindow.cs" />
-    <Compile Include="KSPPluginFramework\SkinsLibrary.cs" />
+    <Compile Include="ExampleFM.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\BROKE\BROKE.csproj">
+      <Project>{e2401369-d01c-4195-920a-5106c7a4079c}</Project>
+      <Name>BROKE</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

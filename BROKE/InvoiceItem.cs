@@ -5,7 +5,7 @@ using System.Text;
 
 namespace BROKE
 {
-    public sealed class InvoiceItem
+    public sealed class InvoiceItem : IPersistenceLoad
     {
         /// <summary>
         /// Only for (de-)serialization purposes.  DO NOT USE.
@@ -25,6 +25,7 @@ namespace BROKE
             Revenue = revenue;
             Expenses = expenses;
             InvoiceReason = reason;
+            PersistenceLoad();
         }
         
         [Persistent]
@@ -100,6 +101,16 @@ namespace BROKE
             var handler = InvoiceUnpaid;
             if (handler != null)
                 handler(this, EventArgs.Empty);
+        }
+
+        public void PersistenceLoad()
+        {
+            var relatedFundingModifier = BROKE.Instance.fundingModifiers.FirstOrDefault(modifier => modifier.GetName() == InvoiceName);
+            if (relatedFundingModifier != null)
+            {
+                InvoicePaid += relatedFundingModifier.OnInvoicePaid;
+                InvoiceUnpaid += relatedFundingModifier.OnInvoiceUnpaid; 
+            }
         }
 
         public static readonly InvoiceItem EmptyInvoice = new InvoiceItem("", 0, 0);

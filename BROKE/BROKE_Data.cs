@@ -39,25 +39,16 @@ namespace BROKE
 
             try
             {
-                print("Loading BROKE data");
                 ConfigNode BROKENode = node.GetNode("BROKE_Data");
                 if (BROKENode != null)
                 {
-                    print("Loading invoices");
-                    ConfigNode invoices = BROKENode.GetNode("Invoices");
-                    if (invoices != null)
-                    {
-                        print("invoices is not null");
-                        BROKE.Instance.InvoiceItems.Clear();
-                        BROKE.Instance.InvoiceItems.AddRange(ConfigNodeToList<InvoiceItem>(invoices)); 
-                    }
                     int skinID = 2;
                     int.TryParse(BROKENode.GetValue("Skin"), out skinID);
                     BROKE.Instance.SelectSkin(skinID);
                     ConfigNode disabled = BROKENode.GetNode("DisabledFMs");
                     if (disabled != null)
                         BROKE.Instance.disabledFundingModifiers = ConfigNodeToList(disabled);
-
+                    print("loaded disabled list");
                     //load each IFundingModifier
                     foreach (IFundingModifier fundingMod in BROKE.Instance.fundingModifiers)
                     {
@@ -65,11 +56,18 @@ namespace BROKE
                         if (fmNode != null)
                             fundingMod.LoadData(fmNode);
                     }
+                    print("loaded funding modifiers");
+                    ConfigNode invoices = BROKENode.GetNode("Invoices");
+                    if (invoices != null)
+                    {
+                        BROKE.Instance.InvoiceItems.Clear();
+                        BROKE.Instance.InvoiceItems.AddRange(ConfigNodeToList<InvoiceItem>(invoices));
+                    }
                 }
             }
             catch (Exception e)
             {
-                UnityEngine.Debug.Log("Exception while loading BROKE data! "+ e.Message);
+                UnityEngine.Debug.LogException(e);
             }
         }
 
@@ -105,8 +103,6 @@ namespace BROKE
             {
                 T value = new T();
                 ConfigNode.LoadObjectFromConfig(value, element);
-                print("Loading element :" + element.name);
-                //retList.Add(ConfigNode.CreateObjectFromConfig<T>(element));
                 retList.Add(value);
             }
             return retList;

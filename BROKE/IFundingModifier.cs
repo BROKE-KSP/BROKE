@@ -83,5 +83,19 @@ namespace BROKE
         /// Draws the main GUI, an extension of the Expense Report
         /// </summary>
         void DrawMainGUI();
+
+        /// <summary>
+        /// Called when some payment is put toward expenses on an invoice item generated from this funding modifier.
+        /// </summary>
+        /// <param name="sender">The invoice item.</param>
+        /// <param name="args">Data about the payment.</param>
+        void OnInvoicePaid(object sender, InvoiceItem.InvoicePaidEventArgs args);
+
+        /// <summary>
+        /// Called when an invoice is unpaid during a period.
+        /// </summary>
+        /// <param name="sender">The invoice item.</param>
+        /// <param name="args">Empty event arguments, can be ignored.</param>
+        void OnInvoiceUnpaid(object sender, EventArgs args);
     }
 }

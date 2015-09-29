@@ -31,7 +31,7 @@ namespace BROKEExampleFundingModifier
             Debug.Log("Example Disabled!");
         }
 
-        private void OnInvoicePaid(object sender, InvoiceItem.InvoicePaidEventArgs args)
+        public void OnInvoicePaid(object sender, InvoiceItem.InvoicePaidEventArgs args)
         {
             if (args.PaidInFull)
                 Debug.Log("Invoice Paid in full");
@@ -39,7 +39,7 @@ namespace BROKEExampleFundingModifier
                 Debug.Log("Invoice Paid : " + args.AmountPaid);
         }
 
-        private void OnUnpaidInvoice(object sender, EventArgs args)
+        public void OnInvoiceUnpaid(object sender, EventArgs args)
         {
             Debug.Log("Invoice Unpaid!");
         }
@@ -50,8 +50,6 @@ namespace BROKEExampleFundingModifier
             AllTimeRevenue += 31;
             AllTimeExpenses += 42;
             var invoice = new InvoiceItem(GetName(), 31, 42);
-            invoice.InvoicePaid += OnInvoicePaid;
-            invoice.InvoiceUnpaid += OnUnpaidInvoice;
             return invoice;
         }
 
@@ -61,8 +59,6 @@ namespace BROKEExampleFundingModifier
             AllTimeRevenue += 100;
             AllTimeExpenses += 25;
             var invoice = new InvoiceItem(GetName(), 100, 25);
-            invoice.InvoicePaid += OnInvoicePaid;
-            invoice.InvoiceUnpaid += OnUnpaidInvoice;
             return invoice;
         }
 

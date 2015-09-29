@@ -15,9 +15,9 @@ namespace BROKE
 
             ConfigNode BROKENode = new ConfigNode();
             //Save BROKE data
-            BROKENode.AddValue("OutstandingDebt", BROKE.Instance.RemainingDebt);
+            ConfigNode outstandingInvoices = ListToConfigNode(BROKE.Instance.InvoiceItems);
+            BROKENode.AddNode("Invoices", outstandingInvoices);
             BROKENode.AddValue("Skin", BROKE.Instance.SelectedSkin);
-            //BROKENode.AddValue("DisabledFMs", BROKE.Instance.disabledFundingModifiers);
             ConfigNode disabled = ListToConfigNode(BROKE.Instance.disabledFundingModifiers);
             if (disabled != null)
                 BROKENode.AddNode("DisabledFMs", disabled);
@@ -39,10 +39,18 @@ namespace BROKE
 
             try
             {
+                print("Loading BROKE data");
                 ConfigNode BROKENode = node.GetNode("BROKE_Data");
                 if (BROKENode != null)
                 {
-                    double.TryParse(BROKENode.GetValue("OutstandingDebt"), out BROKE.Instance.RemainingDebt);
+                    print("Loading invoices");
+                    ConfigNode invoices = BROKENode.GetNode("Invoices");
+                    if (invoices != null)
+                    {
+                        print("invoices is not null");
+                        BROKE.Instance.InvoiceItems.Clear();
+                        BROKE.Instance.InvoiceItems.AddRange(ConfigNodeToList<InvoiceItem>(invoices)); 
+                    }
                     int skinID = 2;
                     int.TryParse(BROKENode.GetValue("Skin"), out skinID);
                     BROKE.Instance.SelectSkin(skinID);
@@ -73,11 +81,34 @@ namespace BROKE
             return retNode;
         }
 
+        public ConfigNode ListToConfigNode<T>(List<T> list)
+        {
+            ConfigNode retNode = new ConfigNode();
+            foreach (var item in list)
+                retNode.AddNode(ConfigNode.CreateConfigFromObject(item));
+            return retNode;
+        }
+
         public List<string> ConfigNodeToList(ConfigNode node)
         {
             List<string> retList = new List<string>();
             foreach (string s in node.GetValues("element"))
                 retList.Add(s);
+            return retList;
+        }
+
+        public List<T> ConfigNodeToList<T>(ConfigNode node)
+            where T :new()
+        {
+            List<T> retList = new List<T>();
+            foreach (var element in node.GetNodes())
+            {
+                T value = new T();
+                ConfigNode.LoadObjectFromConfig(value, element);
+                print("Loading element :" + element.name);
+                //retList.Add(ConfigNode.CreateObjectFromConfig<T>(element));
+                retList.Add(value);
+            }
             return retList;
         }
     }

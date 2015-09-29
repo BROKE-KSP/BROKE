@@ -32,16 +32,16 @@ namespace BROKE
         /// <summary>
         /// Return the funds gained and lost for this Quarter. The returned values will be added/removed by B.R.O.K.E. so there is no need to do that yourself.
         /// </summary>
-        /// <returns>double[2] income, expenses</returns>
-        double[] ProcessQuarterly();
+        /// <returns>An InvoiceItem representing the quarterly invoice.</returns>
+        InvoiceItem ProcessQuarterly();
 
         /// <summary>
         /// Return the funds gained and lost Yearly. The returned values will be added/removed by B.R.O.K.E. so there is no need to do that yourself.
         /// Note that this should NOT be the sum of the Quarterly income/expenses for the year. That's calculated by B.R.O.K.E. This is just for
         /// income/expenses that happen ONLY once a year
         /// </summary>
-        /// <returns>double[2] income, expenses</returns>
-        double[] ProcessYearly();
+        /// <returns>An InvoiceItem representing the yearly invoice.</returns>
+        InvoiceItem ProcessYearly();
 
         /// <summary>
         /// This will be called once a day and should be used to update any time-based funding information (ie, # of running missions that day, which Kerbals are at KSC and for how long, etc)

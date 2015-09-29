@@ -30,9 +30,13 @@ namespace BROKE
         private int LastUT = -1;
 
         public List<IFundingModifier> fundingModifiers;
-        private Dictionary<string, double> Revenue = new Dictionary<string, double>(), Expenses = new Dictionary<string, double>();
+        internal readonly List<InvoiceItem> InvoiceItems = new List<InvoiceItem>();
         public List<string> disabledFundingModifiers = new List<string>();
-        public double RemainingDebt = 0;
+
+        public double RemainingDebt()
+        {
+            return InvoiceItems.Sum(item => item.Expenses);
+        }
 
         private int WindowWidth = 360, WindowHeight = 540;
         private bool DrawSettings = false;
@@ -90,7 +94,7 @@ namespace BROKE
             }
             if (UT % sPerYear < LastUT % sPerYear)
             {
-                //New quarter
+                //New year
                 NewYear();
             }
 
@@ -104,10 +108,8 @@ namespace BROKE
 
         public void ProcessExpenseReport()
         {
+            var totalRevenue = InvoiceItems.Sum(item => item.Revenue);
             CashInRevenues();
-            UpdateRemainingDebt();
-            double totalRevenue = 0;
-            Revenue.Values.ToList().ForEach(delegate(double val) { totalRevenue += val; });
             PayExpenses(totalRevenue);
            // DisplayExpenseReport();
             button.SetTrue();
@@ -168,10 +170,7 @@ namespace BROKE
             double totalRevenue = 0;
             foreach (IFundingModifier FM in fundingModifiers)
             {
-                double revenueForFM = 0;
-                if (Revenue.ContainsKey(FM.GetName()))
-                    revenueForFM = Revenue[FM.GetName()];
-                
+                var revenueForFM = InvoiceItems.Where(item => item.InvoiceName == FM.GetName()).Sum(item => item.Revenue);
                 totalRevenue += revenueForFM;
                 if (revenueForFM != 0)
                 {
@@ -210,9 +209,7 @@ namespace BROKE
             double totalExpenses = 0;
             foreach (IFundingModifier FM in fundingModifiers)
             {
-                double expenseForFM = 0;
-                if (Expenses.ContainsKey(FM.GetName()))
-                    expenseForFM = Expenses[FM.GetName()];
+                var expenseForFM = InvoiceItems.Where(item => item.InvoiceName == FM.GetName()).Sum(item => item.Expenses);
                 totalExpenses += expenseForFM;
                 if (expenseForFM != 0)
                 {
@@ -252,7 +249,7 @@ namespace BROKE
 
             GUILayout.BeginHorizontal();
             GUILayout.Label("Remaining Debt: ", yellowText);
-            GUILayout.Label("√"+RemainingDebt.ToString("N"), RemainingDebt != 0 ? redText : greenText);
+            GUILayout.Label("√"+RemainingDebt().ToString("N"), RemainingDebt() != 0 ? redText : greenText);
             GUILayout.EndHorizontal();
             GUILayout.BeginHorizontal();
             if (GUILayout.Button(((Texture)GameDatabase.Instance.GetTexture("BROKE/Textures/gear", false)), GUILayout.ExpandWidth(false)))
@@ -268,8 +265,8 @@ namespace BROKE
                     toPay = -1;
                     payAmountTxt = "-1";
                 }
-                toPay = Math.Min(toPay, RemainingDebt);
-                RemainingDebt = PayExpenses(toPay);
+                toPay = Math.Min(toPay, RemainingDebt());
+                PayExpenses(toPay);
             }
             GUILayout.EndHorizontal();
             GUILayout.EndVertical();
@@ -405,14 +402,11 @@ namespace BROKE
         {
             //Calculate quarterly expenses and display expense report (unless also a new year)
             LogFormatted_DebugOnly("New Quarter! " + KSPUtil.PrintDate((int)Planetarium.GetUniversalTime(), true, true));
-            ResetFundingDictionaries();
             foreach (IFundingModifier fundingMod in fundingModifiers)
             {
                 if (!FMDisabled(fundingMod))
                 {
-                    double[] results = fundingMod.ProcessQuarterly();
-                    AddOrCreateInDictionary(Revenue, fundingMod.GetName(), results[0]);
-                    AddOrCreateInDictionary(Expenses, fundingMod.GetName(), results[1]);
+                    InvoiceItems.Add(fundingMod.ProcessQuarterly());
                 }
             }
         }
@@ -425,22 +419,8 @@ namespace BROKE
             {
                 if (!FMDisabled(fundingMod))
                 {
-                    double[] results = fundingMod.ProcessYearly();
-                    AddOrCreateInDictionary(Revenue, fundingMod.GetName(), results[0]);
-                    AddOrCreateInDictionary(Expenses, fundingMod.GetName(), results[1]);
+                    InvoiceItems.Add(fundingMod.ProcessYearly());
                 }
-            }
-        }
-
-        private void ResetFundingDictionaries()
-        {
-            Revenue = new Dictionary<string, double>();
-            Expenses = new Dictionary<string, double>();
-
-            foreach (IFundingModifier fundMod in fundingModifiers)
-            {
-                Revenue.Add(fundMod.GetName(), 0);
-                Expenses.Add(fundMod.GetName(), 0);
             }
         }
 
@@ -448,12 +428,12 @@ namespace BROKE
         {
             DrawSettings = false;
             Debug.Log("Revenue:");
-            foreach (KeyValuePair<string, double> kvp in Revenue)
-                Debug.Log(kvp.Key + ": " + kvp.Value);
+            foreach (var invoiceItem in InvoiceItems)
+                Debug.Log(invoiceItem.InvoiceName + ": " + invoiceItem.Revenue);
 
             Debug.Log("Expenses:");
-            foreach (KeyValuePair<string, double> kvp in Expenses)
-                Debug.Log(kvp.Key + ": " + kvp.Value);
+            foreach (var invoiceItem in InvoiceItems)
+                Debug.Log(invoiceItem.InvoiceName + ": " + invoiceItem.Expenses);
 
             this.Visible = true;
             this.DragEnabled = true;
@@ -464,20 +444,11 @@ namespace BROKE
 
         public void CashInRevenues()
         {
-            foreach (KeyValuePair<string, double> kvp in Revenue)
+            foreach (var invoiceItem in InvoiceItems)
             {
-                AdjustFunds(kvp.Value);
+                AdjustFunds(invoiceItem.Revenue);
+                invoiceItem.WithdrawRevenue();
             }
-        }
-
-        public double UpdateRemainingDebt()
-        {
-            foreach (KeyValuePair<string, double> kvp in Expenses)
-            {
-                RemainingDebt += kvp.Value;
-            }
-
-            return RemainingDebt;
         }
 
         public double PayExpenses(double MaxToPay = -1)
@@ -489,16 +460,40 @@ namespace BROKE
             if (MaxToPay < 0) //Pay anything we can
             {
                 //pay the minimum of the remaining funds and the amount we owe
-                toPay = Math.Min(RemainingDebt, Funding.Instance.Funds);
+                toPay = Math.Min(RemainingDebt(), Funding.Instance.Funds);
             }
             else //Pay the minimum of the amount we have, the amount we're willing to pay, and the amount we owe
             {
                 toPay = Math.Min(MaxToPay, Funding.Instance.Funds);
-                toPay = Math.Min(toPay, RemainingDebt);
+                toPay = Math.Min(toPay, RemainingDebt());
             }
             AdjustFunds(-toPay);
-            RemainingDebt -= toPay;
-            return RemainingDebt;
+            for(int i = 0; i < InvoiceItems.Count; ++i)
+            {
+                var item = InvoiceItems[i];
+                if(item.Expenses == 0)
+                {
+                    InvoiceItems.RemoveAt(i);
+                    --i;
+                }
+                else if (toPay > 0)
+                {
+                    var amountToPay = Math.Min(item.Expenses, toPay);
+                    item.PayInvoice(amountToPay);
+                    if (item.Expenses == 0)
+                    {
+                        //Remove item and backtrack on list to get the next item correctly
+                        InvoiceItems.RemoveAt(i);
+                        --i;
+                    }
+                    toPay -= amountToPay;
+                }
+                else
+                {
+                    item.NotifyMissedPayment();
+                }
+            }
+            return RemainingDebt();
         }
 
         //Shamelessly modified from this StackOverflow question/answer: http://stackoverflow.com/questions/5411694/get-all-inherited-classes-of-an-abstract-class

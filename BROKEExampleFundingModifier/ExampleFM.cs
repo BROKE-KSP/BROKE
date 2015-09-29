@@ -31,20 +31,39 @@ namespace BROKEExampleFundingModifier
             Debug.Log("Example Disabled!");
         }
 
-        public double[] ProcessYearly()
+        private void OnInvoicePaid(object sender, InvoiceItem.InvoicePaidEventArgs args)
         {
-            Debug.Log("Example Yearly update!");
-            AllTimeRevenue += 100;
-            AllTimeExpenses += 25;
-            return new double[] { 100, 25 };
+            if (args.PaidInFull)
+                Debug.Log("Invoice Paid in full");
+            else
+                Debug.Log("Invoice Paid : " + args.AmountPaid);
         }
 
-        public double[] ProcessQuarterly()
+        private void OnUnpaidInvoice(object sender, EventArgs args)
+        {
+            Debug.Log("Invoice Unpaid!");
+        }
+
+        public InvoiceItem ProcessQuarterly()
         {
             Debug.Log("Example Quarterly update!");
             AllTimeRevenue += 31;
             AllTimeExpenses += 42;
-            return new double[] { 31, 42 };
+            var invoice = new InvoiceItem(GetName(), 31, 42);
+            invoice.InvoicePaid += OnInvoicePaid;
+            invoice.InvoiceUnpaid += OnUnpaidInvoice;
+            return invoice;
+        }
+
+        public InvoiceItem ProcessYearly()
+        {
+            Debug.Log("Example Yearly update!");
+            AllTimeRevenue += 100;
+            AllTimeExpenses += 25;
+            var invoice = new InvoiceItem(GetName(), 100, 25);
+            invoice.InvoicePaid += OnInvoicePaid;
+            invoice.InvoiceUnpaid += OnUnpaidInvoice;
+            return invoice;
         }
 
         public void DailyUpdate() { Debug.Log("Example Daily update!"); }
@@ -75,5 +94,6 @@ namespace BROKEExampleFundingModifier
 
         public void DrawSettingsGUI() { GUILayout.Label("Example settings!"); }
         public void DrawMainGUI() { GUILayout.Label("Hello, World!"); }
+
     }
 }

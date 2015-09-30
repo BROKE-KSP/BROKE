@@ -38,6 +38,11 @@ namespace BROKE
             return InvoiceItems.Sum(item => item.Expenses);
         }
 
+        public double PendingRevenue()
+        {
+            return InvoiceItems.Sum(item => item.Revenue);
+        }
+
         private int WindowWidth = 360, WindowHeight = 540;
         private bool DrawSettings = false;
 
@@ -108,9 +113,6 @@ namespace BROKE
 
         public void ProcessExpenseReport()
         {
-            var totalRevenue = InvoiceItems.Sum(item => item.Revenue);
-            CashInRevenues();
-            PayExpenses(totalRevenue);
            // DisplayExpenseReport();
             button.SetTrue();
         }
@@ -246,11 +248,7 @@ namespace BROKE
             GUILayout.Label("Net Revenue: ", yellowText);
             GUILayout.Label("√" + Math.Abs(totalRevenue - totalExpenses).ToString("N"), (totalRevenue - totalExpenses) < 0 ? redText : greenText);
             GUILayout.EndHorizontal();
-
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("Remaining Debt: ", yellowText);
-            GUILayout.Label("√"+RemainingDebt().ToString("N"), RemainingDebt() != 0 ? redText : greenText);
-            GUILayout.EndHorizontal();
+            
             GUILayout.BeginHorizontal();
             if (GUILayout.Button(((Texture)GameDatabase.Instance.GetTexture("BROKE/Textures/gear", false)), GUILayout.ExpandWidth(false)))
             {
@@ -263,8 +261,13 @@ namespace BROKE
                 if (!double.TryParse(payAmountTxt, out toPay))
                 {
                     toPay = -1;
-                    payAmountTxt = "-1";
+                    payAmountTxt = "Pay Maximum";
                 }
+                else
+                {
+                    toPay += PendingRevenue();
+                }
+                CashInRevenues();
                 toPay = Math.Min(toPay, RemainingDebt());
                 PayExpenses(toPay);
             }
@@ -453,6 +456,7 @@ namespace BROKE
 
         public double PayExpenses(double MaxToPay = -1)
         {
+            LogFormatted_DebugOnly("Paying Expenses!");
             if (HighLogic.CurrentGame.Mode != Game.Modes.CAREER) //No funds outside of career
                 return 0;
 

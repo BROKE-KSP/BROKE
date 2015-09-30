@@ -15,18 +15,21 @@ namespace BROKE
         /// <summary>
         /// Constructor for creating an InvoiceItem.
         /// </summary>
-        /// <param name="name">Must equal the name of your funding modifier.</param>
+        /// <param name="modifier">The IFundingModifier that generated this InvoiceItem.</param>
         /// <param name="revenue">The revenue tied to this invoice.</param>
         /// <param name="expenses">The expenses tied to this invoice.</param>
         /// <param name="reason">(Optional parameter) The category for the invoice.</param>
-        public InvoiceItem(string name, double revenue, double expenses, TransactionReasons reason = TransactionReasons.None)
+        public InvoiceItem(IFundingModifier modifier, double revenue, double expenses, TransactionReasons reason = TransactionReasons.None)
         {
-            InvoiceName = name;
+            this.modifier = modifier;
+            InvoiceName = modifier != null? modifier.GetName() : string.Empty;
             Revenue = revenue;
             Expenses = expenses;
             InvoiceReason = reason;
-            PersistenceLoad();
+            RegisterEvents();
         }
+
+        private IFundingModifier modifier;
         
         [Persistent]
         private string invoiceName;
@@ -105,14 +108,19 @@ namespace BROKE
 
         public void PersistenceLoad()
         {
-            var relatedFundingModifier = BROKE.Instance.fundingModifiers.FirstOrDefault(modifier => modifier.GetName() == InvoiceName);
-            if (relatedFundingModifier != null)
+            modifier = BROKE.Instance.fundingModifiers.FirstOrDefault(mod => mod.GetName() == InvoiceName);
+            RegisterEvents();
+        }
+
+        private void RegisterEvents()
+        {
+            if (modifier != null)
             {
-                InvoicePaid += relatedFundingModifier.OnInvoicePaid;
-                InvoiceUnpaid += relatedFundingModifier.OnInvoiceUnpaid; 
+                InvoicePaid += modifier.OnInvoicePaid;
+                InvoiceUnpaid += modifier.OnInvoiceUnpaid;
             }
         }
 
-        public static readonly InvoiceItem EmptyInvoice = new InvoiceItem("", 0, 0);
+        public static readonly InvoiceItem EmptyInvoice = new InvoiceItem(null, 0, 0);
     }
 }

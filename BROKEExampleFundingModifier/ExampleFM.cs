@@ -49,7 +49,7 @@ namespace BROKEExampleFundingModifier
             Debug.Log("Example Quarterly update!");
             AllTimeRevenue += 31;
             AllTimeExpenses += 42;
-            var invoice = new InvoiceItem(GetName(), 31, 42);
+            var invoice = new InvoiceItem(this, 31, 42);
             return invoice;
         }
 
@@ -58,7 +58,7 @@ namespace BROKEExampleFundingModifier
             Debug.Log("Example Yearly update!");
             AllTimeRevenue += 100;
             AllTimeExpenses += 25;
-            var invoice = new InvoiceItem(GetName(), 100, 25);
+            var invoice = new InvoiceItem(this, 100, 25);
             return invoice;
         }
 

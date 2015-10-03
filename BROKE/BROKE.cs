@@ -166,89 +166,13 @@ namespace BROKE
 
             GUILayout.BeginHorizontal();
             GUILayout.BeginVertical(GUILayout.Width(WindowWidth));
-            GUILayout.Label("Revenue", yellowText);
-            //Wrap this in a scrollbar
-            revenueScroll = GUILayout.BeginScrollView(revenueScroll, SkinsLibrary.CurrentSkin.textArea);
-            double totalRevenue = 0;
-            foreach (IMultiFundingModifier FM in fundingModifiers)
-            {
-                var revenueForFM = InvoiceItems.Where(item => item.Modifier.GetName() == FM.GetName()).Sum(item => item.Revenue);
-                totalRevenue += revenueForFM;
-                if (revenueForFM != 0)
-                {
-                    GUILayout.BeginHorizontal();
-                    GUILayout.Label(FM.GetName(), SkinsLibrary.CurrentSkin.textArea, GUILayout.Width(WindowWidth/2));
-                    GUILayout.Label("√" + revenueForFM.ToString("N"), greenText2); //GREEN
-                    if (FM.hasMainGUI())
-                    {
-                        if (selectedMainFM != FM && GUILayout.Button("→", GUILayout.ExpandWidth(false)))
-                        {
-                            //tell it to display Main stuff for this in a new vertical
-                            selectedMainFM = FM;
-                            this.WindowRect.width *= 2;
-                            //widen the window probably
-                        }
-                        if (selectedMainFM != null && selectedMainFM == FM && GUILayout.Button("←", GUILayout.ExpandWidth(false)))
-                        {
-                            //hide side window
-                            selectedMainFM = null;
-                            this.WindowRect.width /= 2;
-                            //maybe reset the width here then
-                        }
-                    }
-                    GUILayout.EndHorizontal();
-                }
-            }
-            GUILayout.EndScrollView();
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("Total Revenue: ");
-            GUILayout.Label("√" + totalRevenue.ToString("N"), greenText);
-            GUILayout.EndHorizontal();
-
-            GUILayout.Label("Expenses", yellowText);
-            //Wrap this in a scrollbar
-            expenseScroll = GUILayout.BeginScrollView(expenseScroll, SkinsLibrary.CurrentSkin.textArea);
-            double totalExpenses = 0;
-            foreach (IMultiFundingModifier FM in fundingModifiers)
-            {
-                var expenseForFM = InvoiceItems.Where(item => item.Modifier.GetName() == FM.GetName()).Sum(item => item.Expenses);
-                totalExpenses += expenseForFM;
-                if (expenseForFM != 0)
-                {
-                    GUILayout.BeginHorizontal();
-                    GUILayout.Label(FM.GetName(), SkinsLibrary.CurrentSkin.textArea, GUILayout.Width(WindowWidth / 2));
-                    GUILayout.Label("√" + expenseForFM.ToString("N"), redText2); //RED
-                    if (FM.hasMainGUI())
-                    {
-                        if (selectedMainFM != FM && GUILayout.Button("→", GUILayout.ExpandWidth(false)))
-                        {
-                            //tell it to display Main stuff for this in a new vertical
-                            selectedMainFM = FM;
-                            this.WindowRect.width *= 2;
-                            //widen the window probably
-                        }
-                        if (selectedMainFM != null && selectedMainFM == FM && GUILayout.Button("←", GUILayout.ExpandWidth(false)))
-                        {
-                            //hide side window
-                            selectedMainFM = null;
-                            this.WindowRect.width /= 2;
-                            //maybe reset the width here then
-                        }
-                    }
-                    GUILayout.EndHorizontal();
-                }
-            }
-            GUILayout.EndScrollView();
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("Total Expenses: ");
-            GUILayout.Label("√" + totalExpenses.ToString("N"), redText);
-            GUILayout.EndHorizontal();
-
+            double totalRevenue = DisplayCategoryAndCalculateTotal(yellowText, greenText, greenText2, item => item.Revenue, "Revenue");
+            double totalExpenses = DisplayCategoryAndCalculateTotal(yellowText, redText, redText2, item => item.Expenses, "Expenses");
             GUILayout.BeginHorizontal();
             GUILayout.Label("Net Revenue: ", yellowText);
             GUILayout.Label("√" + Math.Abs(totalRevenue - totalExpenses).ToString("N"), (totalRevenue - totalExpenses) < 0 ? redText : greenText);
             GUILayout.EndHorizontal();
-            
+
             GUILayout.BeginHorizontal();
             if (GUILayout.Button(((Texture)GameDatabase.Instance.GetTexture("BROKE/Textures/gear", false)), GUILayout.ExpandWidth(false)))
             {
@@ -284,6 +208,49 @@ namespace BROKE
                 GUILayout.EndVertical();
             }
             GUILayout.EndHorizontal();
+        }
+
+        private double DisplayCategoryAndCalculateTotal(GUIStyle headerStyle, GUIStyle summaryStyle, GUIStyle itemStyle, Func<InvoiceItem, double> memberSelector, string category)
+        {
+            GUILayout.Label(category, headerStyle);
+            //Wrap this in a scrollbar
+            revenueScroll = GUILayout.BeginScrollView(revenueScroll, SkinsLibrary.CurrentSkin.textArea);
+            double totalRevenue = 0;
+            foreach (IMultiFundingModifier FM in fundingModifiers)
+            {
+                var revenueForFM = InvoiceItems.Where(item => item.Modifier.GetName() == FM.GetName()).Sum(memberSelector);
+                totalRevenue += revenueForFM;
+                if (revenueForFM != 0)
+                {
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label(FM.GetName(), SkinsLibrary.CurrentSkin.textArea, GUILayout.Width(WindowWidth / 2));
+                    GUILayout.Label("√" + revenueForFM.ToString("N"), itemStyle); //GREEN
+                    if (FM.hasMainGUI())
+                    {
+                        if (selectedMainFM != FM && GUILayout.Button("→", GUILayout.ExpandWidth(false)))
+                        {
+                            //tell it to display Main stuff for this in a new vertical
+                            selectedMainFM = FM;
+                            this.WindowRect.width *= 2;
+                            //widen the window probably
+                        }
+                        if (selectedMainFM != null && selectedMainFM == FM && GUILayout.Button("←", GUILayout.ExpandWidth(false)))
+                        {
+                            //hide side window
+                            selectedMainFM = null;
+                            this.WindowRect.width /= 2;
+                            //maybe reset the width here then
+                        }
+                    }
+                    GUILayout.EndHorizontal();
+                }
+            }
+            GUILayout.EndScrollView();
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(String.Format("Total {0}: ", category));
+            GUILayout.Label("√" + totalRevenue.ToString("N"), summaryStyle);
+            GUILayout.EndHorizontal();
+            return totalRevenue;
         }
 
         public void DrawSettingsWindow()

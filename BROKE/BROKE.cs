@@ -29,7 +29,7 @@ namespace BROKE
         public int sPerDay = KSPUtil.Day, sPerYear = KSPUtil.Year, sPerQuarter = KSPUtil.Year / 4;
         private int LastUT = -1;
 
-        public List<IFundingModifier> fundingModifiers;
+        public List<IMultiFundingModifier> fundingModifiers;
         internal readonly List<InvoiceItem> InvoiceItems = new List<InvoiceItem>();
         public List<string> disabledFundingModifiers = new List<string>();
 
@@ -58,9 +58,9 @@ namespace BROKE
                 Destroy(Instance);
             }
             Instance = this;
-            LogFormatted_DebugOnly("Printing names of all classes implementing IFundingModifier:");
+            LogFormatted_DebugOnly("Printing names of all classes implementing IMultiFundingModifier and IFundingMultiplier:");
             fundingModifiers = GetFundingModifiers();
-            foreach (IFundingModifier fundMod in fundingModifiers)
+            foreach (IMultiFundingModifier fundMod in fundingModifiers)
             {
                 LogFormatted_DebugOnly(fundMod.GetName());
             }
@@ -145,8 +145,8 @@ namespace BROKE
         }
 
 
-        private string payAmountTxt = "-1";
-        private IFundingModifier selectedMainFM;
+        private string payAmountTxt = "Pay Maximum";
+        private IMultiFundingModifier selectedMainFM;
         private Vector2 revenueScroll, expenseScroll, customScroll;
         public void DrawExpenseReportWindow()
         {
@@ -170,9 +170,9 @@ namespace BROKE
             //Wrap this in a scrollbar
             revenueScroll = GUILayout.BeginScrollView(revenueScroll, SkinsLibrary.CurrentSkin.textArea);
             double totalRevenue = 0;
-            foreach (IFundingModifier FM in fundingModifiers)
+            foreach (IMultiFundingModifier FM in fundingModifiers)
             {
-                var revenueForFM = InvoiceItems.Where(item => item.InvoiceName == FM.GetName()).Sum(item => item.Revenue);
+                var revenueForFM = InvoiceItems.Where(item => item.Modifier.GetName() == FM.GetName()).Sum(item => item.Revenue);
                 totalRevenue += revenueForFM;
                 if (revenueForFM != 0)
                 {
@@ -209,9 +209,9 @@ namespace BROKE
             //Wrap this in a scrollbar
             expenseScroll = GUILayout.BeginScrollView(expenseScroll, SkinsLibrary.CurrentSkin.textArea);
             double totalExpenses = 0;
-            foreach (IFundingModifier FM in fundingModifiers)
+            foreach (IMultiFundingModifier FM in fundingModifiers)
             {
-                var expenseForFM = InvoiceItems.Where(item => item.InvoiceName == FM.GetName()).Sum(item => item.Expenses);
+                var expenseForFM = InvoiceItems.Where(item => item.Modifier.GetName() == FM.GetName()).Sum(item => item.Expenses);
                 totalExpenses += expenseForFM;
                 if (expenseForFM != 0)
                 {
@@ -290,7 +290,7 @@ namespace BROKE
         {
             GUILayout.BeginHorizontal();
             GUILayout.BeginVertical();
-            foreach (IFundingModifier FM in fundingModifiers)
+            foreach (IMultiFundingModifier FM in fundingModifiers)
             {
                 GUILayout.BeginHorizontal(SkinsLibrary.CurrentSkin.textArea);
                 GUILayout.Label(FM.GetName(), GUILayout.Width(WindowWidth / 2));
@@ -366,7 +366,7 @@ namespace BROKE
             SelectedSkin = skinID;
         }
 
-        public bool FMDisabled(IFundingModifier toCheck)
+        public bool FMDisabled(IMultiFundingModifier toCheck)
         {
             return disabledFundingModifiers.Contains(toCheck.GetConfigName());
         }
@@ -376,13 +376,13 @@ namespace BROKE
             return disabledFundingModifiers.Contains(toCheck);
         }
 
-        public void DisableFundingModifier(IFundingModifier toDisable)
+        public void DisableFundingModifier(IMultiFundingModifier toDisable)
         {
             disabledFundingModifiers.AddUnique(toDisable.GetConfigName());
             toDisable.OnDisabled();
         }
 
-        public void EnableFundingModifier(IFundingModifier toEnable)
+        public void EnableFundingModifier(IMultiFundingModifier toEnable)
         {
             disabledFundingModifiers.Remove(toEnable.GetConfigName());
             toEnable.OnEnabled();
@@ -392,7 +392,7 @@ namespace BROKE
         {
             //Update every FundingModifier
             LogFormatted_DebugOnly("New Day! " + KSPUtil.PrintDate((int)Planetarium.GetUniversalTime(), true, true));
-            foreach(IFundingModifier fundingMod in fundingModifiers)
+            foreach(IMultiFundingModifier fundingMod in fundingModifiers)
             {
                 if (!FMDisabled(fundingMod))
                 {
@@ -405,11 +405,11 @@ namespace BROKE
         {
             //Calculate quarterly expenses and display expense report (unless also a new year)
             LogFormatted_DebugOnly("New Quarter! " + KSPUtil.PrintDate((int)Planetarium.GetUniversalTime(), true, true));
-            foreach (IFundingModifier fundingMod in fundingModifiers)
+            foreach (IMultiFundingModifier fundingMod in fundingModifiers)
             {
                 if (!FMDisabled(fundingMod))
                 {
-                    InvoiceItems.Add(fundingMod.ProcessQuarterly());
+                    InvoiceItems.AddRange(fundingMod.ProcessQuarterly());
                 }
             }
         }
@@ -418,11 +418,11 @@ namespace BROKE
         {
             //Calculate yearly expenses and display expense report
             LogFormatted_DebugOnly("New Year! " + KSPUtil.PrintDate((int)Planetarium.GetUniversalTime(), true, true));
-            foreach (IFundingModifier fundingMod in fundingModifiers)
+            foreach (IMultiFundingModifier fundingMod in fundingModifiers)
             {
                 if (!FMDisabled(fundingMod))
                 {
-                    InvoiceItems.Add(fundingMod.ProcessYearly());
+                    InvoiceItems.AddRange(fundingMod.ProcessYearly());
                 }
             }
         }
@@ -432,11 +432,11 @@ namespace BROKE
             DrawSettings = false;
             Debug.Log("Revenue:");
             foreach (var invoiceItem in InvoiceItems)
-                Debug.Log(invoiceItem.InvoiceName + ": " + invoiceItem.Revenue);
+                Debug.Log(invoiceItem.Modifier.GetName() + ": " + invoiceItem.ItemName + ": " + invoiceItem.Revenue);
 
             Debug.Log("Expenses:");
             foreach (var invoiceItem in InvoiceItems)
-                Debug.Log(invoiceItem.InvoiceName + ": " + invoiceItem.Expenses);
+                Debug.Log(invoiceItem.Modifier.GetName() + ": " + invoiceItem.ItemName + ": " + invoiceItem.Expenses);
 
             this.Visible = true;
             this.DragEnabled = true;
@@ -500,22 +500,32 @@ namespace BROKE
             return RemainingDebt();
         }
 
+
         //Shamelessly modified from this StackOverflow question/answer: http://stackoverflow.com/questions/5411694/get-all-inherited-classes-of-an-abstract-class
         //http://stackoverflow.com/questions/26733/getting-all-types-that-implement-an-interface
-        public List<IFundingModifier> GetFundingModifiers()
+        private IEnumerable<T> GetInstanceOfAllImplementingClasses<T>()
+            where T : class
         {
-            Type type = typeof(IFundingModifier);
+            Type type = typeof(T);
             IEnumerable<Type> types = AppDomain.CurrentDomain.GetAssemblies()
                 .SelectMany(s => s.GetTypes())
-                .Where(p => type.IsAssignableFrom(p) && !p.IsInterface);
-            List<IFundingModifier> fundingMods = new List<IFundingModifier>();
+                .Where(p => type.IsAssignableFrom(p) && !p.IsInterface && !p.IsAbstract);
+            List<T> fundingMods = new List<T>();
 
-            foreach (Type t in types)
+            foreach (Type t in types.Where(t => t.GetConstructor(Type.EmptyTypes) != null))
             {
-                fundingMods.Add(Activator.CreateInstance(t) as IFundingModifier);
+                yield return Activator.CreateInstance(t) as T;
             }
+        }
 
-            return fundingMods;
+        public List<IMultiFundingModifier> GetFundingModifiers()
+        {
+            List<IMultiFundingModifier> modifiers = new List<IMultiFundingModifier>();
+            // We need this cast here because .NET doesn't have co/contra-variance until 4.0 and we're stuck on 3.5
+            modifiers.AddRange(GetInstanceOfAllImplementingClasses<IFundingModifier>()
+                .Select(mod => (IMultiFundingModifier)new SingleToMultiFundingModifier(mod)));
+            modifiers.AddRange(GetInstanceOfAllImplementingClasses<IMultiFundingModifier>());
+            return modifiers;
         }
 
         public static void AddOrCreateInDictionary(Dictionary<string, double> dict, string key, double value)

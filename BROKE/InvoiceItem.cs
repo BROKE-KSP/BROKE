@@ -5,7 +5,7 @@ using System.Text;
 
 namespace BROKE
 {
-    public sealed class InvoiceItem : IPersistenceLoad
+    public sealed class InvoiceItem : IPersistenceLoad, IPersistenceSave
     {
         /// <summary>
         /// Only for (de-)serialization purposes.  DO NOT USE.
@@ -15,30 +15,34 @@ namespace BROKE
         /// <summary>
         /// Constructor for creating an InvoiceItem.
         /// </summary>
-        /// <param name="modifier">The IFundingModifier that generated this InvoiceItem.</param>
+        /// <param name="modifier">The IFundingModifierBase that generated this InvoiceItem.</param>
         /// <param name="revenue">The revenue tied to this invoice.</param>
         /// <param name="expenses">The expenses tied to this invoice.</param>
         /// <param name="reason">(Optional parameter) The category for the invoice.</param>
-        public InvoiceItem(IFundingModifier modifier, double revenue, double expenses, TransactionReasons reason = TransactionReasons.None)
+        public InvoiceItem(IFundingModifierBase modifier, double revenue, double expenses, string itemName = "", TransactionReasons reason = TransactionReasons.None)
         {
-            this.modifier = modifier;
-            InvoiceName = modifier != null? modifier.GetName() : string.Empty;
+            Modifier = modifier;
             Revenue = revenue;
             Expenses = expenses;
             InvoiceReason = reason;
+            ItemName = itemName;
             RegisterEvents();
         }
 
-        private IFundingModifier modifier;
+        public IFundingModifierBase Modifier { get; private set; }
         
         [Persistent]
         private string invoiceName;
 
-        public string InvoiceName
+        [Persistent]
+        private string itemName;
+
+        public string ItemName
         {
-            get { return invoiceName; }
-            private set { invoiceName = value; }
+            get { return itemName; }
+            set { itemName = value; }
         }
+
 
         [Persistent]
         private double revenue;
@@ -108,17 +112,22 @@ namespace BROKE
 
         public void PersistenceLoad()
         {
-            modifier = BROKE.Instance.fundingModifiers.FirstOrDefault(mod => mod.GetName() == InvoiceName);
+            Modifier = BROKE.Instance.fundingModifiers.FirstOrDefault(mod => mod.GetConfigName() == invoiceName);
             RegisterEvents();
         }
 
         private void RegisterEvents()
         {
-            if (modifier != null)
+            if (Modifier != null)
             {
-                InvoicePaid += modifier.OnInvoicePaid;
-                InvoiceUnpaid += modifier.OnInvoiceUnpaid;
+                InvoicePaid += Modifier.OnInvoicePaid;
+                InvoiceUnpaid += Modifier.OnInvoiceUnpaid;
             }
+        }
+
+        public void PersistenceSave()
+        {
+            invoiceName = Modifier.GetConfigName();
         }
 
         public static readonly InvoiceItem EmptyInvoice = new InvoiceItem(null, 0, 0);

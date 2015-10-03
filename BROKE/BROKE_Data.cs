@@ -22,8 +22,8 @@ namespace BROKE
             if (disabled != null)
                 BROKENode.AddNode("DisabledFMs", disabled);
             
-            //Save each IFundingModifier
-            foreach (IFundingModifier fundingMod in BROKE.Instance.fundingModifiers)
+            //Save each IMultiFundingModifier and IFundingModifier
+            foreach (IMultiFundingModifier fundingMod in BROKE.Instance.fundingModifiers)
             {
                 ConfigNode fmNode = fundingMod.SaveData();
                 if (fmNode != null)
@@ -49,8 +49,8 @@ namespace BROKE
                     if (disabled != null)
                         BROKE.Instance.disabledFundingModifiers = ConfigNodeToList(disabled);
                     print("loaded disabled list");
-                    //load each IFundingModifier
-                    foreach (IFundingModifier fundingMod in BROKE.Instance.fundingModifiers)
+                    //Save each IMultiFundingModifier and IFundingModifier
+                    foreach (IMultiFundingModifier fundingMod in BROKE.Instance.fundingModifiers)
                     {
                         ConfigNode fmNode = BROKENode.GetNode(fundingMod.GetConfigName());
                         if (fmNode != null)

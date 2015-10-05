@@ -58,6 +58,7 @@
     <Compile Include="KSPPluginFramework\MonoBehaviourExtended.cs" />
     <Compile Include="KSPPluginFramework\MonoBehaviourWindow.cs" />
     <Compile Include="KSPPluginFramework\SkinsLibrary.cs" />
+    <Compile Include="LoanBase.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SingleToMultiFundingModifier.cs" />
   </ItemGroup>

@@ -167,8 +167,8 @@ namespace BROKE
 
             GUILayout.BeginHorizontal();
             GUILayout.BeginVertical(GUILayout.Width(WindowWidth));
-            double totalRevenue = DisplayCategoryAndCalculateTotal(yellowText, greenText, greenText2, item => item.Revenue, "Revenue");
-            double totalExpenses = DisplayCategoryAndCalculateTotal(yellowText, redText, redText2, item => item.Expenses, "Expenses");
+            double totalRevenue = DisplayCategoryAndCalculateTotalForFMs(ref revenueScroll, yellowText, greenText, greenText2, item => item.Revenue, "Revenue");
+            double totalExpenses = DisplayCategoryAndCalculateTotalForFMs(ref expenseScroll, yellowText, redText, redText2, item => item.Expenses, "Expenses");
             GUILayout.BeginHorizontal();
             GUILayout.Label("Net Revenue: ", yellowText);
             GUILayout.Label("√" + Math.Abs(totalRevenue - totalExpenses).ToString("N"), (totalRevenue - totalExpenses) < 0 ? redText : greenText);
@@ -205,17 +205,26 @@ namespace BROKE
                 customScroll = GUILayout.BeginScrollView(customScroll);
                 //Put it in a scrollview as well
                 selectedMainFM.DrawMainGUI();
+                GUILayout.Label("Current invoices", yellowText);
+                foreach (var groupedItems in InvoiceItems.Where(item => item.Modifier.GetName() == selectedMainFM.GetName())
+                                                    .GroupBy(item => item.ItemName))
+                {
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label(groupedItems.Key, SkinsLibrary.CurrentSkin.textArea, GUILayout.Width(WindowWidth / 3));
+                    GUILayout.Label("√" + groupedItems.Sum(item => item.Revenue).ToString("N"), greenText2);
+                    GUILayout.Label("√" + groupedItems.Sum(item => item.Expenses).ToString("N"), redText2);
+                }
                 GUILayout.EndScrollView();
                 GUILayout.EndVertical();
             }
             GUILayout.EndHorizontal();
         }
 
-        private double DisplayCategoryAndCalculateTotal(GUIStyle headerStyle, GUIStyle summaryStyle, GUIStyle itemStyle, Func<InvoiceItem, double> memberSelector, string category)
+        private double DisplayCategoryAndCalculateTotalForFMs(ref Vector2 scrollData, GUIStyle headerStyle, GUIStyle summaryStyle, GUIStyle itemStyle, Func<InvoiceItem, double> memberSelector, string category)
         {
             GUILayout.Label(category, headerStyle);
             //Wrap this in a scrollbar
-            revenueScroll = GUILayout.BeginScrollView(revenueScroll, SkinsLibrary.CurrentSkin.textArea);
+            scrollData = GUILayout.BeginScrollView(scrollData, SkinsLibrary.CurrentSkin.textArea);
             double totalRevenue = 0;
             foreach (IMultiFundingModifier FM in fundingModifiers)
             {
@@ -225,7 +234,7 @@ namespace BROKE
                 {
                     GUILayout.BeginHorizontal();
                     GUILayout.Label(FM.GetName(), SkinsLibrary.CurrentSkin.textArea, GUILayout.Width(WindowWidth / 2));
-                    GUILayout.Label("√" + revenueForFM.ToString("N"), itemStyle); //GREEN
+                    GUILayout.Label("√" + revenueForFM.ToString("N"), itemStyle);
                     if (FM.hasMainGUI())
                     {
                         if (selectedMainFM != FM && GUILayout.Button("→", GUILayout.ExpandWidth(false)))
@@ -459,6 +468,10 @@ namespace BROKE
                         --i;
                     }
                     toPay -= amountToPay;
+                }
+                else
+                {
+                    item.NotifyMissedPayment();
                 }
             }
             return RemainingDebt();

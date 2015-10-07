@@ -113,7 +113,8 @@ namespace BROKE
 
         public void ProcessExpenseReport()
         {
-           // DisplayExpenseReport();
+            // DisplayExpenseReport();
+            InvoiceItems.ForEach(item => item.NotifyMissedPayment());
             button.SetTrue();
         }
 
@@ -458,10 +459,6 @@ namespace BROKE
                         --i;
                     }
                     toPay -= amountToPay;
-                }
-                else
-                {
-                    item.NotifyMissedPayment();
                 }
             }
             return RemainingDebt();

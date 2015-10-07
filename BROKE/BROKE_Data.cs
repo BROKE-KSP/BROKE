@@ -71,7 +71,7 @@ namespace BROKE
             }
         }
 
-        public ConfigNode ListToConfigNode(List<string> list)
+        public static ConfigNode ListToConfigNode(List<string> list)
         {
             ConfigNode retNode = new ConfigNode();
             foreach (string s in list)
@@ -79,7 +79,7 @@ namespace BROKE
             return retNode;
         }
 
-        public ConfigNode ListToConfigNode<T>(List<T> list)
+        public static ConfigNode ListToConfigNode<T>(List<T> list)
         {
             ConfigNode retNode = new ConfigNode();
             foreach (var item in list)
@@ -87,7 +87,7 @@ namespace BROKE
             return retNode;
         }
 
-        public List<string> ConfigNodeToList(ConfigNode node)
+        public static List<string> ConfigNodeToList(ConfigNode node)
         {
             List<string> retList = new List<string>();
             foreach (string s in node.GetValues("element"))
@@ -95,7 +95,7 @@ namespace BROKE
             return retList;
         }
 
-        public List<T> ConfigNodeToList<T>(ConfigNode node)
+        public static List<T> ConfigNodeToList<T>(ConfigNode node)
             where T :new()
         {
             List<T> retList = new List<T>();

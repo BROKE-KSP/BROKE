@@ -210,9 +210,21 @@ namespace BROKE
                                                     .GroupBy(item => item.ItemName))
                 {
                     GUILayout.BeginHorizontal();
-                    GUILayout.Label(groupedItems.Key, SkinsLibrary.CurrentSkin.textArea, GUILayout.Width(WindowWidth / 3));
-                    GUILayout.Label("√" + groupedItems.Sum(item => item.Revenue).ToString("N"), greenText2);
-                    GUILayout.Label("√" + groupedItems.Sum(item => item.Expenses).ToString("N"), redText2);
+                    if (!string.IsNullOrEmpty(groupedItems.Key))
+                    {
+                        GUILayout.Label(groupedItems.Key, SkinsLibrary.CurrentSkin.textArea, GUILayout.Width(WindowWidth / 3)); 
+                    }
+                    double revenue = groupedItems.Sum(item => item.Revenue);
+                    if (revenue != 0)
+                    {
+                        GUILayout.Label("√" + revenue.ToString("N"), greenText2); 
+                    }
+                    double expenses = groupedItems.Sum(item => item.Expenses);
+                    if (expenses != 0)
+                    {
+                        GUILayout.Label("√" + groupedItems.Sum(item => item.Expenses).ToString("N"), redText2); 
+                    }
+                    GUILayout.EndHorizontal();
                 }
                 GUILayout.EndScrollView();
                 GUILayout.EndVertical();

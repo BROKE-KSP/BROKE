@@ -13,15 +13,15 @@ namespace BROKE
         public Loan(Agent offeringAgency, string name, double principal, double apr, double years, double latePenaltyRate = 0.05)
         {
             Agency = offeringAgency;
-            var months = years * 12;
+            var quarters = years * 4;
             if (apr != 0)
             {
                 var i = apr / 12;
-                monthlyPayment = principal * (i + (i / (Math.Pow(1 + i, months) - 1)));
+                quarterlyPayment = principal * (i + (i / (Math.Pow(1 + i, quarters) - 1)));
             }
             else
-                monthlyPayment = principal / months;
-            remainingPayment = monthlyPayment * months;
+                quarterlyPayment = principal / quarters;
+            remainingPayment = quarterlyPayment * quarters;
             penaltyRate = latePenaltyRate;
             this.name = name;
         }
@@ -32,7 +32,7 @@ namespace BROKE
         [Persistent]
         private double remainingPayment;
         [Persistent]
-        private double monthlyPayment;
+        private double quarterlyPayment;
         [Persistent]
         private double penaltyRate;
         [Persistent]
@@ -47,7 +47,7 @@ namespace BROKE
 
         public double GetNextPaymentAmount()
         {
-            return Math.Min(monthlyPayment, remainingPayment);
+            return Math.Min(quarterlyPayment, remainingPayment);
         }
 
         internal void Pay(double amount)

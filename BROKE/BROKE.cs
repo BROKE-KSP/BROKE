@@ -201,10 +201,10 @@ namespace BROKE
             GUILayout.EndHorizontal();
         }
 
-        private void DisplayInvoicesForFM(GUIStyle headerStyel, GUIStyle negativeStyle, GUIStyle positiveStyle, IFundingModifierBase selectedFM)
+        private void DisplayInvoicesForFM(GUIStyle headerStyle, GUIStyle negativeStyle, GUIStyle positiveStyle, IFundingModifierBase selectedFM)
         {
             var invoices = InvoiceItems.Where(item => item.Modifier.GetName() == selectedFM.GetName());
-            GUILayout.Label("Current invoices", headerStyel);
+            GUILayout.Label("Current invoices", headerStyle);
             foreach (var groupedItems in invoices.GroupBy(item => item.ItemName))
             {
                 GUILayout.BeginHorizontal();
@@ -227,6 +227,13 @@ namespace BROKE
             GUILayout.EndScrollView();
             GUILayout.BeginHorizontal();
             ShowPayPromptAndPay(invoices, "Pay Selected");
+            if (!invoices.Any())
+            {
+                //hide side window
+                selectedMainFM = null;
+                this.WindowRect.width = WindowWidth;
+                //maybe reset the width here then
+            }
             GUILayout.EndHorizontal();
         }
 

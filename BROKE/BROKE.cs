@@ -179,8 +179,56 @@ namespace BROKE
             {
                 DrawSettings = true;
             }
+            ShowPayPromptAndPay(InvoiceItems);
+            GUILayout.EndHorizontal();
+            GUILayout.EndVertical();
+            //draw main window for the selected FM
+            if (selectedMainFM != null)
+            {
+                GUILayout.BeginVertical(GUILayout.Width(WindowWidth));
+                customScroll = GUILayout.BeginScrollView(customScroll);
+                //Put it in a scrollview as well
+                if (selectedMainFM.hasMainGUI())
+                    selectedMainFM.DrawMainGUI();
+                DisplayInvoicesForFM(yellowText, redText2, greenText2, selectedMainFM);
+                GUILayout.EndVertical();
+            }
+            GUILayout.EndHorizontal();
+        }
+
+        private void DisplayInvoicesForFM(GUIStyle headerStyel, GUIStyle negativeStyle, GUIStyle positiveStyle, IFundingModifierBase selectedFM)
+        {
+            var invoices = InvoiceItems.Where(item => item.Modifier.GetName() == selectedFM.GetName());
+            GUILayout.Label("Current invoices", headerStyel);
+            foreach (var groupedItems in invoices.GroupBy(item => item.ItemName))
+            {
+                GUILayout.BeginHorizontal();
+                if (!string.IsNullOrEmpty(groupedItems.Key))
+                {
+                    GUILayout.Label(groupedItems.Key, SkinsLibrary.CurrentSkin.textArea, GUILayout.Width(WindowWidth / 3));
+                }
+                double revenue = groupedItems.Sum(item => item.Revenue);
+                if (revenue != 0)
+                {
+                    GUILayout.Label("√" + revenue.ToString("N"), positiveStyle);
+                }
+                double expenses = groupedItems.Sum(item => item.Expenses);
+                if (expenses != 0)
+                {
+                    GUILayout.Label("√" + groupedItems.Sum(item => item.Expenses).ToString("N"), negativeStyle);
+                }
+                GUILayout.EndHorizontal();
+            }
+            GUILayout.EndScrollView();
+            GUILayout.BeginHorizontal();
+            ShowPayPromptAndPay(invoices, "Pay Selected");
+            GUILayout.EndHorizontal();
+        }
+
+        private void ShowPayPromptAndPay(IEnumerable<InvoiceItem> itemsToBalance, string payPrompt = "Pay")
+        {
             payAmountTxt = GUILayout.TextField(payAmountTxt);
-            if (GUILayout.Button("Pay", GUILayout.ExpandWidth(false)))
+            if (GUILayout.Button(payPrompt, GUILayout.ExpandWidth(false)))
             {
                 double toPay;
                 if (!double.TryParse(payAmountTxt, out toPay))
@@ -192,44 +240,10 @@ namespace BROKE
                 {
                     toPay += PendingRevenue();
                 }
-                CashInRevenues();
+                CashInRevenues(itemsToBalance);
                 toPay = Math.Min(toPay, RemainingDebt());
-                PayExpenses(toPay);
+                PayExpenses(itemsToBalance, toPay);
             }
-            GUILayout.EndHorizontal();
-            GUILayout.EndVertical();
-            //draw main window for the selected FM
-            if (selectedMainFM != null)
-            {
-                GUILayout.BeginVertical(GUILayout.Width(WindowWidth));
-                customScroll = GUILayout.BeginScrollView(customScroll);
-                //Put it in a scrollview as well
-                selectedMainFM.DrawMainGUI();
-                GUILayout.Label("Current invoices", yellowText);
-                foreach (var groupedItems in InvoiceItems.Where(item => item.Modifier.GetName() == selectedMainFM.GetName())
-                                                    .GroupBy(item => item.ItemName))
-                {
-                    GUILayout.BeginHorizontal();
-                    if (!string.IsNullOrEmpty(groupedItems.Key))
-                    {
-                        GUILayout.Label(groupedItems.Key, SkinsLibrary.CurrentSkin.textArea, GUILayout.Width(WindowWidth / 3)); 
-                    }
-                    double revenue = groupedItems.Sum(item => item.Revenue);
-                    if (revenue != 0)
-                    {
-                        GUILayout.Label("√" + revenue.ToString("N"), greenText2); 
-                    }
-                    double expenses = groupedItems.Sum(item => item.Expenses);
-                    if (expenses != 0)
-                    {
-                        GUILayout.Label("√" + groupedItems.Sum(item => item.Expenses).ToString("N"), redText2); 
-                    }
-                    GUILayout.EndHorizontal();
-                }
-                GUILayout.EndScrollView();
-                GUILayout.EndVertical();
-            }
-            GUILayout.EndHorizontal();
         }
 
         private double DisplayCategoryAndCalculateTotalForFMs(ref Vector2 scrollData, GUIStyle headerStyle, GUIStyle summaryStyle, GUIStyle itemStyle, Func<InvoiceItem, double> memberSelector, string category)
@@ -237,17 +251,18 @@ namespace BROKE
             GUILayout.Label(category, headerStyle);
             //Wrap this in a scrollbar
             scrollData = GUILayout.BeginScrollView(scrollData, SkinsLibrary.CurrentSkin.textArea);
-            double totalRevenue = 0;
+            double total = 0;
             foreach (IMultiFundingModifier FM in fundingModifiers)
             {
-                var revenueForFM = InvoiceItems.Where(item => item.Modifier.GetName() == FM.GetName()).Sum(memberSelector);
-                totalRevenue += revenueForFM;
-                if (revenueForFM != 0)
+                var invoices = InvoiceItems.Where(item => item.Modifier.GetName() == FM.GetName());
+                var sumForFM = invoices.Sum(memberSelector);
+                total += sumForFM;
+                if (sumForFM != 0)
                 {
                     GUILayout.BeginHorizontal();
                     GUILayout.Label(FM.GetName(), SkinsLibrary.CurrentSkin.textArea, GUILayout.Width(WindowWidth / 2));
-                    GUILayout.Label("√" + revenueForFM.ToString("N"), itemStyle);
-                    if (FM.hasMainGUI())
+                    GUILayout.Label("√" + sumForFM.ToString("N"), itemStyle);
+                    if (FM.hasMainGUI() || invoices.Count() > 1)
                     {
                         if (selectedMainFM != FM && GUILayout.Button("→", GUILayout.ExpandWidth(false)))
                         {
@@ -270,9 +285,9 @@ namespace BROKE
             GUILayout.EndScrollView();
             GUILayout.BeginHorizontal();
             GUILayout.Label(String.Format("Total {0}: ", category));
-            GUILayout.Label("√" + totalRevenue.ToString("N"), summaryStyle);
+            GUILayout.Label("√" + total.ToString("N"), summaryStyle);
             GUILayout.EndHorizontal();
-            return totalRevenue;
+            return total;
         }
 
         public void DrawSettingsWindow()
@@ -434,21 +449,20 @@ namespace BROKE
             //SkinsLibrary.SetCurrent(SkinsLibrary.DefSkinType.Unity);
         }
 
-        public void CashInRevenues()
+        public void CashInRevenues(IEnumerable<InvoiceItem> itemsToBalance)
         {
-            foreach (var invoiceItem in InvoiceItems)
+            foreach (var invoiceItem in itemsToBalance)
             {
                 AdjustFunds(invoiceItem.Revenue);
                 invoiceItem.WithdrawRevenue();
             }
         }
 
-        public double PayExpenses(double MaxToPay = -1)
+        public double PayExpenses(IEnumerable<InvoiceItem> invoicesToPay, double MaxToPay = -1)
         {
             LogFormatted_DebugOnly("Paying Expenses!");
             if (HighLogic.CurrentGame.Mode != Game.Modes.CAREER) //No funds outside of career
                 return 0;
-
             double toPay = 0;
             if (MaxToPay < 0) //Pay anything we can
             {
@@ -461,31 +475,16 @@ namespace BROKE
                 toPay = Math.Min(toPay, RemainingDebt());
             }
             AdjustFunds(-toPay);
-            for(int i = 0; i < InvoiceItems.Count; ++i)
+            foreach(var item in invoicesToPay)
             {
-                var item = InvoiceItems[i];
-                if(item.Expenses == 0)
-                {
-                    InvoiceItems.RemoveAt(i);
-                    --i;
-                }
-                else if (toPay > 0)
+                if (toPay > 0)
                 {
                     var amountToPay = Math.Min(item.Expenses, toPay);
                     item.PayInvoice(amountToPay);
-                    if (item.Expenses == 0)
-                    {
-                        //Remove item and backtrack on list to get the next item correctly
-                        InvoiceItems.RemoveAt(i);
-                        --i;
-                    }
                     toPay -= amountToPay;
                 }
-                else
-                {
-                    item.NotifyMissedPayment();
-                }
             }
+            InvoiceItems.RemoveAll(item => item.Revenue == 0 && item.Expenses == 0);
             return RemainingDebt();
         }
 

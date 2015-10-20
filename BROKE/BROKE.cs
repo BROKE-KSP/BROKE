@@ -136,7 +136,7 @@ namespace BROKE
             }
             this.button = ApplicationLauncher.Instance.AddModApplication(
                 DisplayExpenseReport,
-                () => { this.Visible = false; },
+                HideWindow,
                 null,
                 null,
                 null,
@@ -145,6 +145,11 @@ namespace BROKE
                 (Texture)GameDatabase.Instance.GetTexture("BROKE/Textures/icon_button_stock", false));
         }
 
+        public void HideWindow() //Deselect the active FM when the window is closed
+        {
+            this.Visible = false;
+            selectedMainFM = null;
+        }
 
         private string payAmountTxt = "Pay Maximum";
         private IMultiFundingModifier selectedMainFM;
@@ -253,14 +258,14 @@ namespace BROKE
                         {
                             //tell it to display Main stuff for this in a new vertical
                             selectedMainFM = FM;
-                            this.WindowRect.width *= 2;
+                            this.WindowRect.width = WindowWidth * 2;
                             //widen the window probably
                         }
                         if (selectedMainFM != null && selectedMainFM == FM && GUILayout.Button("←", GUILayout.ExpandWidth(false)))
                         {
                             //hide side window
                             selectedMainFM = null;
-                            this.WindowRect.width /= 2;
+                            this.WindowRect.width = WindowWidth;
                             //maybe reset the width here then
                         }
                     }
@@ -297,14 +302,14 @@ namespace BROKE
                     {
                         //tell it to display Main stuff for this in a new vertical
                         selectedMainFM = FM;
-                        this.WindowRect.width *= 2;
+                        this.WindowRect.width = WindowWidth * 2;
                         //widen the window probably
                     }
                     if (selectedMainFM != null && selectedMainFM == FM && GUILayout.Button("←", GUILayout.ExpandWidth(false)))
                     {
                         //hide side window
                         selectedMainFM = null;
-                        this.WindowRect.width /= 2;
+                        this.WindowRect.width = WindowWidth;
                         //maybe reset the width here then
                     }
                 }

@@ -12,6 +12,12 @@ namespace BROKE
 
         public Loan(Agent offeringAgency, string name, double principal, double apr, double years, double latePenaltyRate = 0.05)
         {
+            if (principal < 0)
+                throw new ArgumentOutOfRangeException("principal");
+            if (apr < 0)
+                throw new ArgumentOutOfRangeException("apr");
+            if (years < 0)
+                throw new ArgumentOutOfRangeException("years");
             Agency = offeringAgency;
             var quarters = years * 4;
             if (apr != 0)

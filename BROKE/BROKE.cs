@@ -248,9 +248,13 @@ namespace BROKE
                     toPay = -1;
                     payAmountTxt = "Pay Maximum";
                 }
-                else
+                else if(toPay > 0)
                 {
                     toPay += PendingRevenue();
+                }
+                else
+                {
+                    toPay = -1;
                 }
                 CashInRevenues(itemsToBalance);
                 toPay = Math.Min(toPay, RemainingDebt());

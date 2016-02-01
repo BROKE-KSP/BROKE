@@ -511,15 +511,27 @@ namespace BROKE
             where T : class
         {
             Type type = typeof(T);
-            IEnumerable<Type> types = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(s => s.GetTypes())
-                .Where(p => type.IsAssignableFrom(p) && !p.IsInterface && !p.IsAbstract);
-            List<T> fundingMods = new List<T>();
-
-            foreach (Type t in types.Where(t => t.GetConstructor(Type.EmptyTypes) != null))
+            var instances = new List<T>();
+            try
             {
-                yield return Activator.CreateInstance(t) as T;
+                IEnumerable<Type> types = AppDomain.CurrentDomain.GetAssemblies()
+            .SelectMany(s => s.GetTypes())
+            .Where(p => type.IsAssignableFrom(p) && !p.IsInterface && !p.IsAbstract);
+                List<T> fundingMods = new List<T>();
+
+                foreach (Type t in types.Where(t => t.GetConstructor(Type.EmptyTypes) != null))
+                {
+                    instances.Add(Activator.CreateInstance(t) as T);
+                }
             }
+            catch (ReflectionTypeLoadException ex)
+            {
+                foreach (var subException in ex.LoaderExceptions)
+                {
+                    Debug.LogException(subException);
+                }
+            }
+            return instances;
         }
 
         public List<IMultiFundingModifier> GetFundingModifiers()

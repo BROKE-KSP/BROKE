@@ -94,6 +94,7 @@ namespace BROKE
             if (UT % sPerQuarter < LastUT % sPerQuarter)
             {
                 //New quarter
+                InvoiceItems.ForEach(item => item.NotifyMissedPayment());
                 NewQuarter();
                 doExpenseReport = true;
             }
@@ -114,7 +115,6 @@ namespace BROKE
         public void ProcessExpenseReport()
         {
             // DisplayExpenseReport();
-            InvoiceItems.ForEach(item => item.NotifyMissedPayment());
             button.SetTrue();
         }
 

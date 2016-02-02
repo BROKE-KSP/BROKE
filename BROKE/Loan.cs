@@ -10,26 +10,27 @@ namespace BROKE
         {
         }
 
-        public Loan(Agent offeringAgency, string name, double principal, double apr, double years, double latePenaltyRate = 0.05)
+        public Loan(Agent offeringAgency, string name, double principal, double interest, double years, double latePenaltyRate = 0.05)
         {
             if (principal < 0)
                 throw new ArgumentOutOfRangeException("principal");
-            if (apr < 0)
-                throw new ArgumentOutOfRangeException("apr");
+            if (interest < 0)
+                throw new ArgumentOutOfRangeException("interest");
             if (years < 0)
                 throw new ArgumentOutOfRangeException("years");
             Agency = offeringAgency;
             var quarters = years * 4;
-            if (apr != 0)
+            if (interest != 0)
             {
-                var i = apr / 12;
-                quarterlyPayment = principal * (i + (i / (Math.Pow(1 + i, quarters) - 1)));
+                var quarterlyRate = interest / 4;
+                quarterlyPayment = principal * (quarterlyRate / (1 - Math.Pow(1 + quarterlyRate, -quarters)));
             }
             else
                 quarterlyPayment = principal / quarters;
             remainingPayment = quarterlyPayment * quarters;
             penaltyRate = latePenaltyRate;
             this.name = name;
+            this.principal = principal;
         }
 
         public Agent Agency { get; private set; }
@@ -43,7 +44,14 @@ namespace BROKE
         private double penaltyRate;
         [Persistent]
         private string name;
-        
+
+        [Persistent]
+        private double principal;
+
+        public double GetPrincipal()
+        {
+            return principal;
+        }
 
         public string GetName()
         {

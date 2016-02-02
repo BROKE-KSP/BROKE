@@ -11,11 +11,14 @@ namespace BROKE
 
         public void AddLoan(Loan newLoan)
         {
+            if (CanAddLoan(newLoan)) currentLoans.Add(newLoan.GetName(), newLoan);
+            else throw new InvalidOperationException("There is already a loan issued with this name.");
+        }
+
+        public bool CanAddLoan(Loan loan)
+        {
             //Need unique because this is how the manager ids loans in sending the payments back.
-            if(currentLoans.ContainsKey(newLoan.GetName()))
-            {
-                throw new InvalidOperationException("There is already a loan issued with this name.");
-            }
+            return !currentLoans.ContainsKey(loan.GetName());
         }
 
         public void DailyUpdate()
@@ -78,7 +81,7 @@ namespace BROKE
 
         public IEnumerable<InvoiceItem> ProcessQuarterly()
         {
-            return currentLoans.Select(loan => new InvoiceItem(this, 0, loan.Value.GetNextPaymentAmount(), loan.Key));
+            return currentLoans.Select(loan => new InvoiceItem(this, 0, loan.Value.GetNextPaymentAmount(), loan.Key, TransactionReasons.StrategyInput));
         }
 
         public IEnumerable<InvoiceItem> ProcessYearly()

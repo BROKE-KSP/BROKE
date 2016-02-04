@@ -60,6 +60,8 @@
     <Compile Include="LoanGenerator.cs" />
     <Compile Include="LoanIssuerUI.cs" />
     <Compile Include="LoanManager.cs" />
+    <Compile Include="PaymentEntry.cs" />
+    <Compile Include="PaymentHistory.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SingleToMultiFundingModifier.cs" />
   </ItemGroup>

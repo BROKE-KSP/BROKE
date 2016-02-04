@@ -85,12 +85,14 @@ namespace BROKE
 
         public event EventHandler<InvoicePaidEventArgs> InvoicePaid;
 
-        internal void WithdrawRevenue()
+        internal PaymentEntry WithdrawRevenue()
         {
+            var paidRevenue = Revenue;
             Revenue = 0;
+            return new PaymentEntry(ItemName, Modifier.GetName(), paidRevenue);
         }
 
-        internal void PayInvoice(double amountPaid)
+        internal PaymentEntry PayInvoice(double amountPaid)
         {
             var handler = InvoicePaid;
             if (handler != null)
@@ -99,6 +101,7 @@ namespace BROKE
                 handler(this, args);
             }
             Expenses -= amountPaid;
+            return new PaymentEntry(ItemName, Modifier.GetName(), -amountPaid);
         }
 
         public event EventHandler<EventArgs> InvoiceUnpaid;

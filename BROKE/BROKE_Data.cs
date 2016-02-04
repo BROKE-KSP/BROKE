@@ -30,6 +30,8 @@ namespace BROKE
                     BROKENode.AddNode(fundingMod.GetConfigName(), fmNode);
             }
 
+            BROKENode.AddNode(BROKE.Instance.paymentHistory.OnSave());
+
 
             node.AddNode("BROKE_Data", BROKENode);
         }
@@ -62,6 +64,11 @@ namespace BROKE
                     {
                         BROKE.Instance.InvoiceItems.Clear();
                         BROKE.Instance.InvoiceItems.AddRange(ConfigNodeToList<InvoiceItem>(invoices));
+                    }
+                    ConfigNode history = BROKENode.GetNode("PaymentHistory");
+                    if (history != null)
+                    {
+                        BROKE.Instance.paymentHistory.OnLoad(history);
                     }
                 }
             }

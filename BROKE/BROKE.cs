@@ -26,12 +26,13 @@ namespace BROKE
     {
         public static BROKE Instance;
 
-        public int sPerDay = KSPUtil.Day, sPerYear = KSPUtil.Year, sPerQuarter = KSPUtil.Year / 4;
+        public static int sPerDay = KSPUtil.Day, sPerYear = KSPUtil.Year, sPerQuarter = KSPUtil.Year / 4;
         private int LastUT = -1;
 
         public List<IMultiFundingModifier> fundingModifiers;
         internal readonly List<InvoiceItem> InvoiceItems = new List<InvoiceItem>();
         public List<string> disabledFundingModifiers = new List<string>();
+        internal PaymentHistory paymentHistory = new PaymentHistory();
 
         public double RemainingDebt()
         {
@@ -423,7 +424,7 @@ namespace BROKE
 
         public void NewQuarter()
         {
-            //Calculate quarterly expenses and display expense report (unless also a new year)
+            //Calculate quarterly expenses and display expense report
             LogFormatted_DebugOnly("New Quarter! " + KSPUtil.PrintDate((int)Planetarium.GetUniversalTime(), true, true));
             foreach (IMultiFundingModifier fundingMod in fundingModifiers)
             {
@@ -470,7 +471,7 @@ namespace BROKE
             foreach (var invoiceItem in itemsToBalance)
             {
                 AdjustFunds(invoiceItem.Revenue);
-                invoiceItem.WithdrawRevenue();
+                paymentHistory.Record(invoiceItem.WithdrawRevenue());
             }
         }
 
@@ -496,7 +497,7 @@ namespace BROKE
                 if (toPay > 0)
                 {
                     var amountToPay = Math.Min(item.Expenses, toPay);
-                    item.PayInvoice(amountToPay);
+                    paymentHistory.Record(item.PayInvoice(amountToPay));
                     toPay -= amountToPay;
                 }
             }

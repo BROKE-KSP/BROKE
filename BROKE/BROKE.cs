@@ -24,6 +24,13 @@ namespace BROKE
 
     public class BROKE : MonoBehaviourWindow
     {
+        private enum BROKEView
+        {
+            ExpenseReport,
+            Settings,
+            History
+        }
+
         public static BROKE Instance;
 
         public static int sPerDay = KSPUtil.Day, sPerYear = KSPUtil.Year, sPerQuarter = KSPUtil.Year / 4;
@@ -33,6 +40,9 @@ namespace BROKE
         internal readonly List<InvoiceItem> InvoiceItems = new List<InvoiceItem>();
         public List<string> disabledFundingModifiers = new List<string>();
         internal PaymentHistory paymentHistory = new PaymentHistory();
+        private BROKEView currentView;
+
+        private Vector2 revenueScroll, expenseScroll, customScroll, historyScroll;
 
         public double RemainingDebt()
         {
@@ -45,7 +55,6 @@ namespace BROKE
         }
 
         private int WindowWidth = 360, WindowHeight = 540;
-        private bool DrawSettings = false;
 
         private ApplicationLauncherButton button;
 
@@ -121,12 +130,33 @@ namespace BROKE
 
         internal override void DrawWindow(int id)
         {
-            if (DrawSettings)
-                DrawSettingsWindow();
-            else
-                DrawExpenseReportWindow();
+            switch (currentView)
+            {
+                case BROKEView.ExpenseReport:
+                    DrawExpenseReportWindow();
+                    break;
+                case BROKEView.Settings:
+                    DrawSettingsWindow();
+                    break;
+                case BROKEView.History:
+                    DrawPaymentHistoryWindow();
+                    break;
+                default:
+                    break;
+            }
         }
 
+        private void DrawPaymentHistoryWindow()
+        {
+            historyScroll = GUILayout.BeginScrollView(historyScroll);
+            GUILayout.BeginVertical();
+            foreach (var paymentItem in paymentHistory)
+            {
+                GUILayout.Label(paymentItem.ToString());
+            }
+            GUILayout.EndVertical();
+            GUILayout.EndScrollView();
+        }
 
         void OnAppLauncherReady()
         {
@@ -154,7 +184,6 @@ namespace BROKE
 
         private string payAmountTxt = "Pay Maximum";
         private IMultiFundingModifier selectedMainFM;
-        private Vector2 revenueScroll, expenseScroll, customScroll;
         public void DrawExpenseReportWindow()
         {
             GUIStyle redText = new GUIStyle(GUI.skin.label);
@@ -183,7 +212,11 @@ namespace BROKE
             GUILayout.BeginHorizontal();
             if (GUILayout.Button(((Texture)GameDatabase.Instance.GetTexture("BROKE/Textures/gear", false)), GUILayout.ExpandWidth(false)))
             {
-                DrawSettings = true;
+                currentView = BROKEView.Settings;
+            }
+            if (GUILayout.Button("History", GUILayout.ExpandWidth(false)))
+            {
+                currentView = BROKEView.History;
             }
             ShowPayPromptAndPay(InvoiceItems);
             GUILayout.EndHorizontal();
@@ -450,7 +483,7 @@ namespace BROKE
 
         private void DisplayExpenseReport()
         {
-            DrawSettings = false;
+            currentView = BROKEView.ExpenseReport;
             Debug.Log("Revenue:");
             foreach (var invoiceItem in InvoiceItems)
                 Debug.Log(invoiceItem.Modifier.GetName() + ": " + invoiceItem.ItemName + ": " + invoiceItem.Revenue);

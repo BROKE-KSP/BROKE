@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Collections;
 
 namespace BROKE
 {
-    internal class PaymentHistory
+    internal class PaymentHistory : IEnumerable
     {
         struct TimedPaymentHistory
         {
@@ -17,6 +18,13 @@ namespace BROKE
                 this.time = time;
                 this.entry = entry;
             }
+
+            public override string ToString()
+            {
+                return string.Format("{0}: {1}",
+                    KSPUtil.PrintDate((int)Planetarium.GetUniversalTime(), true),
+                    entry);
+            }
         }
 
         private Queue<TimedPaymentHistory> entryHistory = new Queue<TimedPaymentHistory>();
@@ -26,8 +34,12 @@ namespace BROKE
 
         internal void Record(PaymentEntry paymentEntry)
         {
-            UnityEngine.Debug.Log(string.Format("Recording transaction: {0} for {1}, √{2}", paymentEntry.invoiceName, paymentEntry.modifierName, paymentEntry.paymentOrRevenue));
             entryHistory.Enqueue(new TimedPaymentHistory(Planetarium.GetUniversalTime(), paymentEntry));
+        }
+
+        public IEnumerator GetEnumerator()
+        {
+            return entryHistory.Reverse().Where(entry => entry.entry.paymentOrRevenue != 0).GetEnumerator();
         }
 
         internal void ClearOneYearAgo()

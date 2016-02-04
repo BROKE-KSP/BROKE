@@ -16,5 +16,10 @@
             this.modifierName = modifierName;
             this.invoiceName = invoiceName;
         }
+
+        public override string ToString()
+        {
+            return string.Format("{0} for {1}, √{2}", invoiceName, modifierName, paymentOrRevenue);
+        }
     }
 }

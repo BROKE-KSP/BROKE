@@ -33,8 +33,8 @@ namespace BROKE
 
         public static BROKE Instance;
 
-        public static int sPerDay = KSPUtil.Day, sPerYear = KSPUtil.Year, sPerQuarter = KSPUtil.Year / 4;
-        private int LastUT = -1;
+        public static long sPerDay = KSPUtil.Day, sPerYear = KSPUtil.Year, sPerQuarter = KSPUtil.Year / 4;
+        private long LastUT = -1;
 
         public List<IMultiFundingModifier> fundingModifiers;
         internal readonly List<InvoiceItem> InvoiceItems = new List<InvoiceItem>();
@@ -93,7 +93,7 @@ namespace BROKE
             //Check the time and see if a new day, quarter, year has started and if so trigger the appropriate calls
             //We'll do this with the modulus function, rather than tracking the amount of time that has passed since the last update
             bool doExpenseReport = false;
-            int UT = (int)Planetarium.GetUniversalTime();
+            var UT = (long)Planetarium.GetUniversalTime();
             if (LastUT < 0)
                 LastUT = UT;
             if (UT % sPerDay < LastUT % sPerDay) //if UT and LastUT are same day, then UT % sPerDay is > LastUT % sPerDay. If they're different days, then UT % sPerDay will be < LastUT % sPerDay

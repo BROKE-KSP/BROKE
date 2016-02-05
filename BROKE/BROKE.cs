@@ -444,6 +444,7 @@ namespace BROKE
 
         public void NewDay()
         {
+            paymentHistory.ClearOneYearAgo();
             //Update every FundingModifier
             LogFormatted_DebugOnly("New Day! " + KSPUtil.PrintDate((int)Planetarium.GetUniversalTime(), true, true));
             foreach(IMultiFundingModifier fundingMod in fundingModifiers)

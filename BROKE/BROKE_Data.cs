@@ -101,9 +101,11 @@ namespace BROKE
                 retList.Add(s);
             return retList;
         }
+        
 
+        //We need the class requirement here because the loading stuff won't load into structs.
         public static List<T> ConfigNodeToList<T>(ConfigNode node)
-            where T :new()
+            where T :class, new()
         {
             List<T> retList = new List<T>();
             foreach (var element in node.GetNodes())

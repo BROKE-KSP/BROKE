@@ -89,7 +89,7 @@ namespace BROKE
         {
             var paidRevenue = Revenue;
             Revenue = 0;
-            return new PaymentEntry(ItemName, Modifier.GetName(), paidRevenue);
+            return new PaymentEntry(ItemName, Modifier.GetName(), paidRevenue, Planetarium.GetUniversalTime());
         }
 
         internal PaymentEntry PayInvoice(double amountPaid)
@@ -101,7 +101,7 @@ namespace BROKE
                 handler(this, args);
             }
             Expenses -= amountPaid;
-            return new PaymentEntry(ItemName, Modifier.GetName(), -amountPaid);
+            return new PaymentEntry(ItemName, Modifier.GetName(), -amountPaid, Planetarium.GetUniversalTime());
         }
 
         public event EventHandler<EventArgs> InvoiceUnpaid;

@@ -202,15 +202,23 @@ namespace BROKE
 
             GUILayout.BeginHorizontal();
             GUILayout.BeginVertical(GUILayout.Width(WindowWidth));
-            double totalRevenue = DisplayCategoryAndCalculateTotalForFMs(ref revenueScroll, yellowText, greenText, greenText2, item => item.Revenue, "Revenue");
-            double totalExpenses = DisplayCategoryAndCalculateTotalForFMs(ref expenseScroll, yellowText, redText, redText2, item => item.Expenses, "Expenses");
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Revenue", yellowText);
+            if (GUILayout.Button("Collect", GUILayout.ExpandWidth(false)))
+            {
+                CashInRevenues(InvoiceItems);
+            }
+            GUILayout.EndHorizontal();
+            double totalRevenue = DisplayCategoryAndCalculateTotalForFMs(ref revenueScroll, greenText, greenText2, item => item.Revenue, "Revenue");
+            GUILayout.Label("Expenses", yellowText);
+            double totalExpenses = DisplayCategoryAndCalculateTotalForFMs(ref expenseScroll, redText, redText2, item => item.Expenses, "Expenses");
             GUILayout.BeginHorizontal();
             GUILayout.Label("Net Revenue: ", yellowText);
             GUILayout.Label("√" + Math.Abs(totalRevenue - totalExpenses).ToString("N"), (totalRevenue - totalExpenses) < 0 ? redText : greenText);
             GUILayout.EndHorizontal();
 
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button(((Texture)GameDatabase.Instance.GetTexture("BROKE/Textures/gear", false)), GUILayout.ExpandWidth(false)))
+            if (GUILayout.Button(GameDatabase.Instance.GetTexture("BROKE/Textures/gear", false), GUILayout.ExpandWidth(false)))
             {
                 currentView = BROKEView.Settings;
             }
@@ -296,9 +304,8 @@ namespace BROKE
             }
         }
 
-        private double DisplayCategoryAndCalculateTotalForFMs(ref Vector2 scrollData, GUIStyle headerStyle, GUIStyle summaryStyle, GUIStyle itemStyle, Func<InvoiceItem, double> memberSelector, string category)
+        private double DisplayCategoryAndCalculateTotalForFMs(ref Vector2 scrollData, GUIStyle summaryStyle, GUIStyle itemStyle, Func<InvoiceItem, double> memberSelector, string category)
         {
-            GUILayout.Label(category, headerStyle);
             //Wrap this in a scrollbar
             scrollData = GUILayout.BeginScrollView(scrollData, SkinsLibrary.CurrentSkin.textArea);
             double total = 0;
@@ -570,7 +577,14 @@ namespace BROKE
 
             foreach (Type t in types.Where(t => t.GetConstructor(Type.EmptyTypes) != null))
             {
-                instances.Add(Activator.CreateInstance(t) as T);
+                T instance;
+                if (typeof(MonoBehaviour).IsAssignableFrom(t))
+                {
+                    instance = gameObject.AddComponent(t) as T;
+                }
+                else
+                    instance = Activator.CreateInstance(t) as T;
+                instances.Add(instance);
             }
             return instances;
         }

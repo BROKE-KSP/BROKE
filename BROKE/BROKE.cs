@@ -550,8 +550,19 @@ namespace BROKE
             try
             {
                 IEnumerable<Type> types = AppDomain.CurrentDomain.GetAssemblies()
-            .SelectMany(s => s.GetTypes())
-            .Where(p => type.IsAssignableFrom(p) && !p.IsInterface && !p.IsAbstract);
+                .SelectMany(s =>
+                    {
+                        try
+                        {
+                            return s.GetTypes();
+                        }
+                        catch (Exception ex)
+                        {
+                            LogFormatted("Failed to load types from asssembly {0}", s.FullName);
+                            return Enumerable.Empty<Type>();
+                        }
+                    })
+                .Where(p => type.IsAssignableFrom(p) && !p.IsInterface && !p.IsAbstract);
                 List<T> fundingMods = new List<T>();
 
                 foreach (Type t in types.Where(t => t.GetConstructor(Type.EmptyTypes) != null))

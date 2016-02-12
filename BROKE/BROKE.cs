@@ -547,35 +547,30 @@ namespace BROKE
         {
             Type type = typeof(T);
             var instances = new List<T>();
-            try
-            {
-                IEnumerable<Type> types = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(s =>
+            IEnumerable<Type> types = AppDomain.CurrentDomain.GetAssemblies()
+            .SelectMany(s =>
+                {
+                    try
                     {
-                        try
+                        return s.GetTypes();
+                    }
+                    catch (ReflectionTypeLoadException ex)
+                    {
+                        LogFormatted("Failed to load types from asssembly");
+                        Debug.LogException(ex);
+                        foreach (var subException in ex.LoaderExceptions)
                         {
-                            return s.GetTypes();
+                            Debug.LogException(subException);
                         }
-                        catch (Exception ex)
-                        {
-                            LogFormatted("Failed to load types from asssembly {0}", s.FullName);
-                            return Enumerable.Empty<Type>();
-                        }
-                    })
-                .Where(p => type.IsAssignableFrom(p) && !p.IsInterface && !p.IsAbstract);
-                List<T> fundingMods = new List<T>();
+                        return Enumerable.Empty<Type>();
+                    }
+                })
+            .Where(p => type.IsAssignableFrom(p) && !p.IsInterface && !p.IsAbstract);
+            List<T> fundingMods = new List<T>();
 
-                foreach (Type t in types.Where(t => t.GetConstructor(Type.EmptyTypes) != null))
-                {
-                    instances.Add(Activator.CreateInstance(t) as T);
-                }
-            }
-            catch (ReflectionTypeLoadException ex)
+            foreach (Type t in types.Where(t => t.GetConstructor(Type.EmptyTypes) != null))
             {
-                foreach (var subException in ex.LoaderExceptions)
-                {
-                    Debug.LogException(subException);
-                }
+                instances.Add(Activator.CreateInstance(t) as T);
             }
             return instances;
         }

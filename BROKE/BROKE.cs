@@ -41,6 +41,8 @@ namespace BROKE
         public List<string> disabledFundingModifiers = new List<string>();
         internal PaymentHistory paymentHistory = new PaymentHistory();
         private BROKEView currentView;
+        internal Dictionary<string, AutopayMode> autopayModes;
+        internal AutopayMode currentAutopayMode = new Manual(); // Default to manual pay
 
         private Vector2 revenueScroll, expenseScroll, customScroll, historyScroll;
 
@@ -74,7 +76,13 @@ namespace BROKE
             {
                 LogFormatted_DebugOnly(fundMod.GetName());
             }
-
+            LogFormatted_DebugOnly("Printing names of all current autopay modes:");
+            // Using a dictionary for faster lookup when setting modes
+            autopayModes = GetInstanceOfAllImplementingClasses<AutopayMode>().ToDictionary(mode => mode.Name, mode => mode);
+            foreach (var mode in autopayModes)
+            {
+                LogFormatted_DebugOnly(mode.Key);
+            }
             if (ApplicationLauncher.Instance != null && ApplicationLauncher.Ready)
                 OnAppLauncherReady();
             else
@@ -124,8 +132,10 @@ namespace BROKE
 
         public void ProcessExpenseReport()
         {
-            // DisplayExpenseReport();
-            button.SetTrue();
+            if (!currentAutopayMode.Execute())
+            {
+                button.SetTrue(); 
+            }
         }
 
         internal override void DrawWindow(int id)
@@ -382,6 +392,20 @@ namespace BROKE
                 }
                 GUILayout.EndHorizontal();
             }
+
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Autopay Mode", GUILayout.Width(WindowWidth / 2));
+            if(GUILayout.Button(currentAutopayMode.Name))
+            {
+                var settings = currentAutopayMode.OnSave();
+                var modeList = autopayModes.Values.ToList();
+                currentAutopayMode = modeList[(modeList.IndexOf(currentAutopayMode) + 1) % modeList.Count];
+                currentAutopayMode.OnLoad(settings);
+            }
+            GUILayout.EndHorizontal();
+            GUILayout.Label("Autopay settings:");
+            currentAutopayMode.DrawSettingsWindow();
 
             if (GUILayout.Button("Change Skin"))
             {

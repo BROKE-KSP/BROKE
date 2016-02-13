@@ -45,6 +45,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AutopayModes.cs" />
     <Compile Include="BROKE.cs" />
     <Compile Include="BROKE_Data.cs" />
     <Compile Include="IFundingModifier.cs" />

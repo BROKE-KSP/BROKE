@@ -31,7 +31,8 @@ namespace BROKE
             }
 
             BROKENode.AddNode(BROKE.Instance.paymentHistory.OnSave());
-
+            BROKENode.AddValue("AutopayMode", BROKE.Instance.currentAutopayMode.Name);
+            BROKENode.AddNode(BROKE.Instance.currentAutopayMode.OnSave());
 
             node.AddNode("BROKE_Data", BROKENode);
         }
@@ -65,11 +66,21 @@ namespace BROKE
                         BROKE.Instance.InvoiceItems.Clear();
                         BROKE.Instance.InvoiceItems.AddRange(ConfigNodeToList<InvoiceItem>(invoices));
                     }
+                    print("loaded current invoices");
                     ConfigNode history = BROKENode.GetNode("PaymentHistory");
                     if (history != null)
                     {
                         BROKE.Instance.paymentHistory.OnLoad(history);
                     }
+                    print("loaded payment history");
+                    string autopayName = BROKENode.GetValue("AutopayMode");
+                    ConfigNode autopaySettings = BROKENode.GetNode("AutopaySettings");
+                    if (BROKE.Instance.autopayModes.ContainsKey(autopayName))
+                    {
+                        BROKE.Instance.currentAutopayMode = BROKE.Instance.autopayModes[autopayName];
+                        BROKE.Instance.currentAutopayMode.OnLoad(autopaySettings);
+                    }
+                    print("loaded autopay mode");
                 }
             }
             catch (Exception e)

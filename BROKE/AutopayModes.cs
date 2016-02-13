@@ -8,16 +8,36 @@ namespace BROKE
 {
     public abstract class AutopayMode
     {
+        /// <summary>
+        /// The name of the autopay mode.  Describes the mode to the player.
+        /// </summary>
         public abstract string Name { get; }
+        /// <summary>
+        /// Executed each quarter after invoices are collected.
+        /// </summary>
+        /// <returns>Should the expense report window be suppressed from showing up?</returns>
         public abstract bool Execute();
+
+        /// <summary>
+        /// Loads settings from persistence.  Automatically accounts for <code>[Persistent]</code> attributes.
+        /// </summary>
+        /// <param name="node">The ConfigNode containing the persisted settings information.</param>
         public virtual void OnLoad(ConfigNode node)
         {
             ConfigNode.LoadObjectFromConfig(this, node);
         }
+
+        /// <summary>
+        /// Saves settings to persistence.  Automatically accounts for <code>[Persistent]</code> attributes.
+        /// </summary>
         public virtual ConfigNode OnSave()
         {
             return ConfigNode.CreateConfigFromObject(this, new ConfigNode("AutopaySettings"));
         }
+
+        /// <summary>
+        /// Draws UI on the settings window when this mode is selected.
+        /// </summary>
         public virtual void DrawSettingsWindow()
         { }
     }

@@ -77,6 +77,8 @@ namespace BROKE
         {
             InvoiceItem item = (InvoiceItem)sender;
             currentLoans.Single(loan => loan.Value.GetName() == item.ItemName).Value.AddLatePenalty(item.Expenses);
+            if (Reputation.Instance != null)
+                Reputation.Instance.AddReputation(-1.0f, TransactionReasons.None);
         }
 
         public IEnumerable<InvoiceItem> ProcessQuarterly()

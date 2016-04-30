@@ -45,7 +45,7 @@ namespace BROKE
                 ConfigNode BROKENode = node.GetNode("BROKE_Data");
                 if (BROKENode != null)
                 {
-                    int skinID = 2;
+                    int skinID = 1;
                     int.TryParse(BROKENode.GetValue("Skin"), out skinID);
                     BROKE.Instance.SelectSkin(skinID);
                     ConfigNode disabled = BROKENode.GetNode("DisabledFMs");

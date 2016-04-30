@@ -28,7 +28,7 @@ namespace BROKE
 
         internal void ClearOneYearAgo()
         {
-            while (Planetarium.GetUniversalTime() - entryHistory.Peek().time > KSPUtil.Year)
+            while (Planetarium.GetUniversalTime() - entryHistory.Peek().time > KSPUtil.dateTimeFormatter.Year)
             {
                 entryHistory.Dequeue();
             }

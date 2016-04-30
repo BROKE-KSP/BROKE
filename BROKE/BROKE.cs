@@ -6,6 +6,7 @@ using UnityEngine;
 using KSP;
 using KSPPluginFramework;
 using System.Reflection;
+using KSP.UI.Screens;
 
 namespace BROKE
 {
@@ -33,7 +34,7 @@ namespace BROKE
 
         public static BROKE Instance;
 
-        public static long sPerDay = KSPUtil.Day, sPerYear = KSPUtil.Year, sPerQuarter = KSPUtil.Year / 4;
+        public static long sPerDay = KSPUtil.dateTimeFormatter.Day, sPerYear = KSPUtil.dateTimeFormatter.Year, sPerQuarter = KSPUtil.dateTimeFormatter.Year / 4;
         private long LastUT = -1;
 
         public List<IMultiFundingModifier> fundingModifiers;
@@ -319,6 +320,7 @@ namespace BROKE
             //Wrap this in a scrollbar
             scrollData = GUILayout.BeginScrollView(scrollData, SkinsLibrary.CurrentSkin.textArea);
             double total = 0;
+            /*
             foreach (IMultiFundingModifier FM in fundingModifiers)
             {
                 var invoices = InvoiceItems.Where(item => item.Modifier.GetName() == FM.GetName());
@@ -348,7 +350,7 @@ namespace BROKE
                     }
                     GUILayout.EndHorizontal();
                 }
-            }
+            }*/
             GUILayout.EndScrollView();
             GUILayout.BeginHorizontal();
             GUILayout.Label(String.Format("Total {0}: ", category));

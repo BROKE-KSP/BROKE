@@ -133,7 +133,7 @@ namespace KSPPluginFramework
             get { return _Visible; }
             set
             {
-                if (_Visible != value)
+               /* if (_Visible != value)
                 {
                     if (value)
                     {
@@ -145,9 +145,15 @@ namespace KSPPluginFramework
                         LogFormatted_DebugOnly("Removing Window from PostDrawQueue", WindowID);
                         RenderingManager.RemoveFromPostDrawQueue(5, this.DrawGUI);
                     }
-                }
+                }*/
                 _Visible = value;
             }
+        }
+
+        private void OnGUI()
+        {
+            if (Visible)
+                this.DrawGUI();
         }
 
         /// <summary>

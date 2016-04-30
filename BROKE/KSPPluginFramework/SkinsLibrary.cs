@@ -434,11 +434,19 @@ namespace KSPPluginFramework
         /// <returns>whether it exists or not</returns>
         internal static Boolean StyleExists(GUISkin SkinToAction, String StyleID)
         {
-            if (SkinToAction.customStyles.Any(x => x.name == StyleID))
-                return true;
-            else
+            try
             {
-                //MonoBehaviourExtended.LogFormatted("Unable to find Style: {0} in Skin: {1}", StyleID, SkinToAction.name);
+                if (SkinToAction.customStyles.Any(x => x.name == StyleID))
+                    return true;
+                else
+                {
+                    //MonoBehaviourExtended.LogFormatted("Unable to find Style: {0} in Skin: {1}", StyleID, SkinToAction.name);
+                    return false;
+                }
+            }
+            catch
+            {
+                MonoBehaviourExtended.LogFormatted("Error while trying to find Style: {0}", StyleID);
                 return false;
             }
             //return (SkinToAction.customStyles.Any(x => x.name == StyleID));

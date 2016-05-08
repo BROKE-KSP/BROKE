@@ -37,7 +37,7 @@ namespace BROKE
         public static long sPerDay = KSPUtil.dateTimeFormatter.Day, sPerYear = KSPUtil.dateTimeFormatter.Year, sPerQuarter = KSPUtil.dateTimeFormatter.Year / 4;
         private long LastUT = -1;
 
-        public List<IMultiFundingModifier> fundingModifiers;
+        public List<IMultiFundingModifier> fundingModifiers = new List<IMultiFundingModifier>();
         internal readonly List<InvoiceItem> InvoiceItems = new List<InvoiceItem>();
         public List<string> disabledFundingModifiers = new List<string>();
         internal PaymentHistory paymentHistory = new PaymentHistory();
@@ -318,9 +318,9 @@ namespace BROKE
         private double DisplayCategoryAndCalculateTotalForFMs(ref Vector2 scrollData, GUIStyle summaryStyle, GUIStyle itemStyle, Func<InvoiceItem, double> memberSelector, string category)
         {
             //Wrap this in a scrollbar
-            scrollData = GUILayout.BeginScrollView(scrollData, SkinsLibrary.CurrentSkin.textArea);
+            scrollData = GUILayout.BeginScrollView(scrollData, GUI.skin.textArea);//, SkinsLibrary.CurrentSkin.textArea);
             double total = 0;
-            /*
+            
             foreach (IMultiFundingModifier FM in fundingModifiers)
             {
                 var invoices = InvoiceItems.Where(item => item.Modifier.GetName() == FM.GetName());
@@ -350,7 +350,7 @@ namespace BROKE
                     }
                     GUILayout.EndHorizontal();
                 }
-            }*/
+            }
             GUILayout.EndScrollView();
             GUILayout.BeginHorizontal();
             GUILayout.Label(String.Format("Total {0}: ", category));
@@ -365,7 +365,7 @@ namespace BROKE
             GUILayout.BeginVertical();
             foreach (IMultiFundingModifier FM in fundingModifiers)
             {
-                GUILayout.BeginHorizontal(SkinsLibrary.CurrentSkin.textArea);
+                GUILayout.BeginHorizontal(GUI.skin.textArea);//SkinsLibrary.CurrentSkin.textArea);
                 GUILayout.Label(FM.GetName(), GUILayout.Width(WindowWidth / 2));
                 bool disabled = FMDisabled(FM);
                 if (GUILayout.Button(disabled ? "Enable" : "Disable"))
@@ -435,11 +435,11 @@ namespace BROKE
 
         public void SelectSkin(int skinID)
         {
-            if (skinID == 0)
+            /*if (skinID == 0)
                 SkinsLibrary.SetCurrent(SkinsLibrary.DefSkinType.KSP);
-            else if (skinID == 1)
+            else if (skinID == 1)*/
                 SkinsLibrary.SetCurrent(SkinsLibrary.DefSkinType.Unity);
-            else if (skinID == 2)
+            /*else if (skinID == 2)
             {
                 if (!SkinsLibrary.SkinExists("Mixed"))
                 {
@@ -449,7 +449,7 @@ namespace BROKE
                 }
                 SkinsLibrary.SetCurrent("Mixed");
             }
-
+            */
             SelectedSkin = skinID;
         }
 

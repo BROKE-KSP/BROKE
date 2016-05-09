@@ -329,7 +329,7 @@ namespace BROKE
                 if (sumForFM != 0)
                 {
                     GUILayout.BeginHorizontal();
-                    GUILayout.Label(FM.GetName(), SkinsLibrary.CurrentSkin.textArea, GUILayout.Width(WindowWidth / 2));
+                    GUILayout.Label(FM.GetName(), GUI.skin.textArea, GUILayout.Width(WindowWidth / 2));
                     GUILayout.Label("√" + sumForFM.ToString("N"), itemStyle);
                     if (FM.hasMainGUI() || invoices.Count() > 1)
                     {

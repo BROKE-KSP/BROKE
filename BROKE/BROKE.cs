@@ -88,11 +88,12 @@ namespace BROKE
                 OnAppLauncherReady();
             else
                 GameEvents.onGUIApplicationLauncherReady.Add(OnAppLauncherReady);
+
         }
 
         internal override void OnDestroy()
         {
-           // GameEvents.onGUIApplicationLauncherReady.Remove(OnAppLauncherReady);
+            GameEvents.onGUIApplicationLauncherReady.Remove(OnAppLauncherReady);
             ApplicationLauncher.Instance.RemoveModApplication(button);
         }
 

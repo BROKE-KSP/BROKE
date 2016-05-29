@@ -264,7 +264,7 @@ namespace BROKE
                 GUILayout.BeginHorizontal();
                 if (!string.IsNullOrEmpty(groupedItems.Key))
                 {
-                    GUILayout.Label(groupedItems.Key, SkinsLibrary.CurrentSkin.textArea, GUILayout.Width(WindowWidth / 3));
+                    GUILayout.Label(groupedItems.Key, HighLogic.Skin.textArea, GUILayout.Width(WindowWidth / 3));
                 }
                 double revenue = groupedItems.Sum(item => item.Revenue);
                 if (revenue != 0)

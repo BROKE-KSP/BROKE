@@ -84,7 +84,12 @@ namespace BROKE
 
         public IEnumerable<InvoiceItem> ProcessYearly()
         {
-            yield return modifier.ProcessYearly();
+            InvoiceItem ii = modifier.ProcessYearly();
+            // Handle no item case
+            if (ii != null)
+                yield return ii;
+            else
+                yield break;
         }
 
         public ConfigNode SaveData()

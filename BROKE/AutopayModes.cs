@@ -69,7 +69,7 @@ namespace BROKE
 
         public override bool Execute()
         {
-            BROKE.Instance.CashInRevenues(BROKE.Instance.InvoiceItems);
+            BROKE.Instance.CashInRevenues(BROKE.State.InvoiceItems);
             return false;
         }
     }
@@ -87,8 +87,8 @@ namespace BROKE
         public override bool Execute()
         {
             var pendingRevenue = BROKE.Instance.PendingRevenue();
-            BROKE.Instance.CashInRevenues(BROKE.Instance.InvoiceItems);
-            BROKE.Instance.PayExpenses(BROKE.Instance.InvoiceItems, pendingRevenue);
+            BROKE.Instance.CashInRevenues(BROKE.State.InvoiceItems);
+            BROKE.Instance.PayExpenses(BROKE.State.InvoiceItems, pendingRevenue);
             return true;
         }
     }
@@ -108,10 +108,10 @@ namespace BROKE
 
         public override bool Execute()
         {
-            BROKE.Instance.CashInRevenues(BROKE.Instance.InvoiceItems);
+            BROKE.Instance.CashInRevenues(BROKE.State.InvoiceItems);
             if (Funding.Instance != null && Funding.Instance.Funds > safetyMinimum)
             {
-                BROKE.Instance.PayExpenses(BROKE.Instance.InvoiceItems); 
+                BROKE.Instance.PayExpenses(BROKE.State.InvoiceItems); 
             }
             return true;
         }

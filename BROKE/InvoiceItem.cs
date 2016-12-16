@@ -115,7 +115,7 @@ namespace BROKE
 
         public void PersistenceLoad()
         {
-            Modifier = BROKE.Instance.fundingModifiers.FirstOrDefault(mod => mod.GetConfigName() == invoiceName);
+            Modifier = BROKE.State.fundingModifiers.FirstOrDefault(mod => mod.GetConfigName() == invoiceName);
             RegisterEvents();
         }
 

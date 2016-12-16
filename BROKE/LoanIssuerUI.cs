@@ -47,7 +47,7 @@ namespace BROKE
 
         private void LoadLoanManager()
         {
-            manager = BROKE.Instance.fundingModifiers.OfType<LoanManager>().FirstOrDefault();
+            manager = BROKE.State.fundingModifiers.OfType<LoanManager>().FirstOrDefault();
         }
 
         void OnAppLauncherReady()

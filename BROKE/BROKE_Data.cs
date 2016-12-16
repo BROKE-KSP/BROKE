@@ -9,36 +9,38 @@ namespace BROKE
     [KSPScenario(ScenarioCreationOptions.AddToAllGames, new GameScenes[] { GameScenes.TRACKSTATION, GameScenes.SPACECENTER, GameScenes.FLIGHT })]
     class BROKE_Data : ScenarioModule
     {
-        public override void OnSave(ConfigNode node)
+        public override void OnSave (ConfigNode node)
         {
             base.OnSave(node);
 
             ConfigNode BROKENode = new ConfigNode();
             //Save BROKE data
-            ConfigNode outstandingInvoices = ListToConfigNode(BROKE.Instance.InvoiceItems);
+            ConfigNode outstandingInvoices = ListToConfigNode(BROKE.State.InvoiceItems);
             BROKENode.AddNode("Invoices", outstandingInvoices);
-            BROKENode.AddValue("Skin", BROKE.Instance.SelectedSkin);
-            ConfigNode disabled = ListToConfigNode(BROKE.Instance.disabledFundingModifiers);
+            BROKENode.AddValue("Skin", BROKE.State.SelectedSkin);
+            ConfigNode disabled = ListToConfigNode(BROKE.State.disabledFundingModifiers);
             if (disabled != null)
                 BROKENode.AddNode("DisabledFMs", disabled);
-            
+
             //Save each IMultiFundingModifier and IFundingModifier
-            foreach (IMultiFundingModifier fundingMod in BROKE.Instance.fundingModifiers)
+            foreach (IMultiFundingModifier fundingMod in BROKE.State.fundingModifiers)
             {
                 ConfigNode fmNode = fundingMod.SaveData();
                 if (fmNode != null)
                     BROKENode.AddNode(fundingMod.GetConfigName(), fmNode);
             }
 
-            BROKENode.AddNode(BROKE.Instance.paymentHistory.OnSave());
-            BROKENode.AddValue("AutopayMode", BROKE.Instance.currentAutopayMode.Name);
-            BROKENode.AddNode(BROKE.Instance.currentAutopayMode.OnSave());
+            BROKENode.AddNode(BROKE.State.paymentHistory.OnSave());
+            BROKENode.AddValue("AutopayMode", BROKE.State.currentAutopayMode.Name);
+            BROKENode.AddNode(BROKE.State.currentAutopayMode.OnSave());
 
             node.AddNode("BROKE_Data", BROKENode);
         }
-        public override void OnLoad(ConfigNode node)
+        public override void OnLoad (ConfigNode node)
         {
             base.OnLoad(node);
+
+            if (BROKE.State.sane) throw new InvalidOperationException("Insanity check failed: state not yet reset");
 
             try
             {
@@ -47,13 +49,13 @@ namespace BROKE
                 {
                     int skinID = 1;
                     int.TryParse(BROKENode.GetValue("Skin"), out skinID);
-                    //BROKE.Instance.SelectSkin(skinID); //TODO: current;y broken
+                    //BROKE.State.SelectSkin(skinID); //TODO: current;y broken
                     ConfigNode disabled = BROKENode.GetNode("DisabledFMs");
                     if (disabled != null)
-                        BROKE.Instance.disabledFundingModifiers = ConfigNodeToList(disabled);
+                        BROKE.State.disabledFundingModifiers = ConfigNodeToList(disabled);
                     print("loaded disabled list");
                     //Save each IMultiFundingModifier and IFundingModifier
-                    foreach (IMultiFundingModifier fundingMod in BROKE.Instance.fundingModifiers)
+                    foreach (IMultiFundingModifier fundingMod in BROKE.State.fundingModifiers)
                     {
                         ConfigNode fmNode = BROKENode.GetNode(fundingMod.GetConfigName());
                         if (fmNode != null)
@@ -63,22 +65,22 @@ namespace BROKE
                     ConfigNode invoices = BROKENode.GetNode("Invoices");
                     if (invoices != null)
                     {
-                        BROKE.Instance.InvoiceItems.Clear();
-                        BROKE.Instance.InvoiceItems.AddRange(ConfigNodeToList<InvoiceItem>(invoices));
+                        BROKE.State.InvoiceItems.Clear();
+                        BROKE.State.InvoiceItems.AddRange(ConfigNodeToList<InvoiceItem>(invoices));
                     }
                     print("loaded current invoices");
                     ConfigNode history = BROKENode.GetNode("PaymentHistory");
                     if (history != null)
                     {
-                        BROKE.Instance.paymentHistory.OnLoad(history);
+                        BROKE.State.paymentHistory.OnLoad(history);
                     }
                     print("loaded payment history");
                     string autopayName = BROKENode.GetValue("AutopayMode");
                     ConfigNode autopaySettings = BROKENode.GetNode("AutopaySettings");
-                    if (BROKE.Instance.autopayModes.ContainsKey(autopayName))
+                    if (BROKE.State.autopayModes.ContainsKey(autopayName))
                     {
-                        BROKE.Instance.currentAutopayMode = BROKE.Instance.autopayModes[autopayName];
-                        BROKE.Instance.currentAutopayMode.OnLoad(autopaySettings);
+                        BROKE.State.currentAutopayMode = BROKE.State.autopayModes[autopayName];
+                        BROKE.State.currentAutopayMode.OnLoad(autopaySettings);
                     }
                     print("loaded autopay mode");
                 }
@@ -87,9 +89,10 @@ namespace BROKE
             {
                 UnityEngine.Debug.LogException(e);
             }
+            BROKE.State.sane = true;
         }
 
-        public static ConfigNode ListToConfigNode(List<string> list)
+        public static ConfigNode ListToConfigNode (List<string> list)
         {
             ConfigNode retNode = new ConfigNode();
             foreach (string s in list)
@@ -97,7 +100,7 @@ namespace BROKE
             return retNode;
         }
 
-        public static ConfigNode ListToConfigNode<T>(List<T> list)
+        public static ConfigNode ListToConfigNode<T> (List<T> list)
         {
             ConfigNode retNode = new ConfigNode();
             foreach (var item in list)
@@ -105,18 +108,18 @@ namespace BROKE
             return retNode;
         }
 
-        public static List<string> ConfigNodeToList(ConfigNode node)
+        public static List<string> ConfigNodeToList (ConfigNode node)
         {
             List<string> retList = new List<string>();
             foreach (string s in node.GetValues("element"))
                 retList.Add(s);
             return retList;
         }
-        
+
 
         //We need the class requirement here because the loading stuff won't load into structs.
-        public static List<T> ConfigNodeToList<T>(ConfigNode node)
-            where T :class, new()
+        public static List<T> ConfigNodeToList<T> (ConfigNode node)
+            where T : class, new()
         {
             List<T> retList = new List<T>();
             foreach (var element in node.GetNodes())

@@ -10,7 +10,7 @@ using KSP.UI.Screens;
 
 namespace BROKE
 {
-    
+
     //Utilizes the amazing KSP Plugin Framework by TriggerAU to make things much easier
     //http://forum.kerbalspaceprogram.com/threads/66503-KSP-Plugin-Framework-Plugin-Examples-and-Structure-v1-1-(Apr-6)
 
@@ -23,6 +23,51 @@ namespace BROKE
     [KSPAddon((KSPAddon.Startup.Flight), false)]
     public class BROKE_Flight : BROKE { }
 
+    // Persistent state container
+    public class BROKEstate
+    {
+        public bool sane = false;
+        public int SelectedSkin = 0;
+        public List<string> disabledFundingModifiers = new List<string>();
+        public List<IMultiFundingModifier> fundingModifiers = new List<IMultiFundingModifier>();
+        internal readonly List<InvoiceItem> InvoiceItems = new List<InvoiceItem>();
+        internal PaymentHistory paymentHistory = new PaymentHistory();
+        internal Dictionary<string, AutopayMode> autopayModes;
+        internal AutopayMode currentAutopayMode = new Manual(); // Default to manual pay
+
+        public void Reset ()
+        {
+            sane = false;
+            SelectedSkin = 0;
+            disabledFundingModifiers.Clear();
+            fundingModifiers.Clear();
+            InvoiceItems.Clear();
+            paymentHistory = new PaymentHistory();
+            autopayModes = null;
+            currentAutopayMode = new Manual(); // Default to manual pay
+        }
+
+        public void SelectSkin (int skinID)
+        {
+            /*if (skinID == 0)
+                SkinsLibrary.SetCurrent(SkinsLibrary.DefSkinType.KSP);
+            else if (skinID == 1)*/
+            SkinsLibrary.SetCurrent(SkinsLibrary.DefSkinType.Unity);
+            /*else if (skinID == 2)
+            {
+                if (!SkinsLibrary.SkinExists("Mixed"))
+                {
+                    GUISkin mixedSkin = SkinsLibrary.CopySkin(SkinsLibrary.DefSkinType.Unity);
+                    mixedSkin.window = HighLogic.Skin.window;
+                    SkinsLibrary.AddSkin("Mixed", mixedSkin, false);
+                }
+                SkinsLibrary.SetCurrent("Mixed");
+            }
+            */
+            SelectedSkin = skinID;
+        }
+    }
+
     public class BROKE : MonoBehaviourWindow
     {
         private enum BROKEView
@@ -32,29 +77,24 @@ namespace BROKE
             History
         }
 
+        public static BROKEstate State = new BROKEstate();
         public static BROKE Instance;
 
         public static long sPerDay = KSPUtil.dateTimeFormatter.Day, sPerYear = KSPUtil.dateTimeFormatter.Year, sPerQuarter = KSPUtil.dateTimeFormatter.Year / 4;
         private long LastUT = -1;
 
-        public List<IMultiFundingModifier> fundingModifiers = new List<IMultiFundingModifier>();
-        internal readonly List<InvoiceItem> InvoiceItems = new List<InvoiceItem>();
-        public List<string> disabledFundingModifiers = new List<string>();
-        internal PaymentHistory paymentHistory = new PaymentHistory();
         private BROKEView currentView;
-        internal Dictionary<string, AutopayMode> autopayModes;
-        internal AutopayMode currentAutopayMode = new Manual(); // Default to manual pay
 
         private Vector2 revenueScroll, expenseScroll, customScroll, historyScroll;
 
-        public double RemainingDebt()
+        public double RemainingDebt ()
         {
-            return InvoiceItems.Sum(item => item.Expenses);
+            return State.InvoiceItems.Sum(item => item.Expenses);
         }
 
-        public double PendingRevenue()
+        public double PendingRevenue ()
         {
-            return InvoiceItems.Sum(item => item.Revenue);
+            return State.InvoiceItems.Sum(item => item.Revenue);
         }
 
         private int WindowWidth = 360, WindowHeight = 540;
@@ -62,25 +102,26 @@ namespace BROKE
         private ApplicationLauncherButton button;
 
         private List<string> skins = new List<string> { "KSP", "Unity", "Mixed" };
-        public int SelectedSkin = 0;
 
-        internal override void Start()
+        internal override void Start ()
         {
+            if (!State.sane) throw new InvalidOperationException("Sanity check failed: state not initialized");
             if (Instance != null)
             {
                 Destroy(Instance);
             }
             Instance = this;
+
             LogFormatted_DebugOnly("Printing names of all classes implementing IMultiFundingModifier and IFundingMultiplier:");
-            fundingModifiers = GetFundingModifiers();
-            foreach (IMultiFundingModifier fundMod in fundingModifiers)
+            State.fundingModifiers = GetFundingModifiers();
+            foreach (IMultiFundingModifier fundMod in State.fundingModifiers)
             {
                 LogFormatted_DebugOnly(fundMod.GetName());
             }
             LogFormatted_DebugOnly("Printing names of all current autopay modes:");
             // Using a dictionary for faster lookup when setting modes
-            autopayModes = GetInstanceOfAllImplementingClasses<AutopayMode>().ToDictionary(mode => mode.Name, mode => mode);
-            foreach (var mode in autopayModes)
+            State.autopayModes = GetInstanceOfAllImplementingClasses<AutopayMode>().ToDictionary(mode => mode.Name, mode => mode);
+            foreach (var mode in State.autopayModes)
             {
                 LogFormatted_DebugOnly(mode.Key);
             }
@@ -91,14 +132,15 @@ namespace BROKE
 
         }
 
-        internal override void OnDestroy()
+        internal override void OnDestroy ()
         {
             GameEvents.onGUIApplicationLauncherReady.Remove(OnAppLauncherReady);
             ApplicationLauncher.Instance.RemoveModApplication(button);
+            State.Reset();
         }
 
 
-        internal override void FixedUpdate()
+        internal override void FixedUpdate ()
         {
             //Check the time and see if a new day, quarter, year has started and if so trigger the appropriate calls
             //We'll do this with the modulus function, rather than tracking the amount of time that has passed since the last update
@@ -114,7 +156,7 @@ namespace BROKE
             if (UT % sPerQuarter < LastUT % sPerQuarter)
             {
                 //New quarter
-                InvoiceItems.ForEach(item => item.NotifyMissedPayment());
+                State.InvoiceItems.ForEach(item => item.NotifyMissedPayment());
                 NewQuarter();
                 doExpenseReport = true;
             }
@@ -132,15 +174,15 @@ namespace BROKE
             }
         }
 
-        public void ProcessExpenseReport()
+        public void ProcessExpenseReport ()
         {
-            if (!currentAutopayMode.Execute())
+            if (!State.currentAutopayMode.Execute())
             {
-                button.SetTrue(); 
+                button.SetTrue();
             }
         }
 
-        internal override void DrawWindow(int id)
+        internal override void DrawWindow (int id)
         {
             switch (currentView)
             {
@@ -158,11 +200,11 @@ namespace BROKE
             }
         }
 
-        private void DrawPaymentHistoryWindow()
+        private void DrawPaymentHistoryWindow ()
         {
             historyScroll = GUILayout.BeginScrollView(historyScroll);
             GUILayout.BeginVertical();
-            foreach (var paymentItem in paymentHistory)
+            foreach (var paymentItem in State.paymentHistory)
             {
                 GUILayout.Label(paymentItem.ToString());
             }
@@ -170,7 +212,7 @@ namespace BROKE
             GUILayout.EndScrollView();
         }
 
-        void OnAppLauncherReady()
+        void OnAppLauncherReady ()
         {
             if (button != null)
             {
@@ -188,7 +230,7 @@ namespace BROKE
                 (Texture)GameDatabase.Instance.GetTexture("BROKE/Textures/icon_button_stock", false));
         }
 
-        public void HideWindow() //Deselect the active FM when the window is closed
+        public void HideWindow () //Deselect the active FM when the window is closed
         {
             this.Visible = false;
             selectedMainFM = null;
@@ -196,7 +238,7 @@ namespace BROKE
 
         private string payAmountTxt = "Pay Maximum";
         private IMultiFundingModifier selectedMainFM;
-        public void DrawExpenseReportWindow()
+        public void DrawExpenseReportWindow ()
         {
             GUIStyle redText = new GUIStyle(GUI.skin.label);
             redText.normal.textColor = Color.red;
@@ -218,7 +260,7 @@ namespace BROKE
             GUILayout.Label("Revenue", yellowText);
             if (GUILayout.Button("Collect", GUILayout.ExpandWidth(false)))
             {
-                CashInRevenues(InvoiceItems);
+                CashInRevenues(State.InvoiceItems);
             }
             GUILayout.EndHorizontal();
             double totalRevenue = DisplayCategoryAndCalculateTotalForFMs(ref revenueScroll, greenText, greenText2, item => item.Revenue, "Revenue");
@@ -238,7 +280,7 @@ namespace BROKE
             {
                 currentView = BROKEView.History;
             }
-            ShowPayPromptAndPay(InvoiceItems);
+            ShowPayPromptAndPay(State.InvoiceItems);
             GUILayout.EndHorizontal();
             GUILayout.EndVertical();
             //draw main window for the selected FM
@@ -255,9 +297,9 @@ namespace BROKE
             GUILayout.EndHorizontal();
         }
 
-        private void DisplayInvoicesForFM(GUIStyle headerStyle, GUIStyle negativeStyle, GUIStyle positiveStyle, IFundingModifierBase selectedFM)
+        private void DisplayInvoicesForFM (GUIStyle headerStyle, GUIStyle negativeStyle, GUIStyle positiveStyle, IFundingModifierBase selectedFM)
         {
-            var invoices = InvoiceItems.Where(item => item.Modifier.GetName() == selectedFM.GetName());
+            var invoices = State.InvoiceItems.Where(item => item.Modifier.GetName() == selectedFM.GetName());
             GUILayout.Label("Current invoices", headerStyle);
             foreach (var groupedItems in invoices.GroupBy(item => item.ItemName))
             {
@@ -291,7 +333,7 @@ namespace BROKE
             GUILayout.EndHorizontal();
         }
 
-        private void ShowPayPromptAndPay(IEnumerable<InvoiceItem> itemsToBalance, string payPrompt = "Pay")
+        private void ShowPayPromptAndPay (IEnumerable<InvoiceItem> itemsToBalance, string payPrompt = "Pay")
         {
             payAmountTxt = GUILayout.TextField(payAmountTxt);
             if (GUILayout.Button(payPrompt, GUILayout.ExpandWidth(false)))
@@ -302,7 +344,7 @@ namespace BROKE
                     toPay = -1;
                     payAmountTxt = "Pay Maximum";
                 }
-                else if(toPay > 0)
+                else if (toPay > 0)
                 {
                     toPay += PendingRevenue();
                 }
@@ -316,15 +358,15 @@ namespace BROKE
             }
         }
 
-        private double DisplayCategoryAndCalculateTotalForFMs(ref Vector2 scrollData, GUIStyle summaryStyle, GUIStyle itemStyle, Func<InvoiceItem, double> memberSelector, string category)
+        private double DisplayCategoryAndCalculateTotalForFMs (ref Vector2 scrollData, GUIStyle summaryStyle, GUIStyle itemStyle, Func<InvoiceItem, double> memberSelector, string category)
         {
             //Wrap this in a scrollbar
             scrollData = GUILayout.BeginScrollView(scrollData, GUI.skin.textArea);//, SkinsLibrary.CurrentSkin.textArea);
             double total = 0;
-            
-            foreach (IMultiFundingModifier FM in fundingModifiers)
+
+            foreach (IMultiFundingModifier FM in State.fundingModifiers)
             {
-                var invoices = InvoiceItems.Where(item => item.Modifier.GetName() == FM.GetName());
+                var invoices = State.InvoiceItems.Where(item => item.Modifier.GetName() == FM.GetName());
                 var sumForFM = invoices.Sum(memberSelector);
                 total += sumForFM;
                 if (sumForFM != 0)
@@ -360,11 +402,11 @@ namespace BROKE
             return total;
         }
 
-        public void DrawSettingsWindow()
+        public void DrawSettingsWindow ()
         {
             GUILayout.BeginHorizontal();
             GUILayout.BeginVertical();
-            foreach (IMultiFundingModifier FM in fundingModifiers)
+            foreach (IMultiFundingModifier FM in State.fundingModifiers)
             {
                 GUILayout.BeginHorizontal(GUI.skin.textArea);//SkinsLibrary.CurrentSkin.textArea);
                 GUILayout.Label(FM.GetName(), GUILayout.Width(WindowWidth / 2));
@@ -399,23 +441,23 @@ namespace BROKE
 
             GUILayout.BeginHorizontal();
             GUILayout.Label("Autopay Mode", GUILayout.Width(WindowWidth / 2));
-            if(GUILayout.Button(currentAutopayMode.Name))
+            if (GUILayout.Button(State.currentAutopayMode.Name))
             {
-                var settings = currentAutopayMode.OnSave();
-                var modeList = autopayModes.Values.ToList();
-                currentAutopayMode = modeList[(modeList.IndexOf(currentAutopayMode) + 1) % modeList.Count];
-                currentAutopayMode.OnLoad(settings);
+                var settings = State.currentAutopayMode.OnSave();
+                var modeList = State.autopayModes.Values.ToList();
+                State.currentAutopayMode = modeList[(modeList.IndexOf(State.currentAutopayMode) + 1) % modeList.Count];
+                State.currentAutopayMode.OnLoad(settings);
             }
             GUILayout.EndHorizontal();
             GUILayout.Label("Autopay settings:");
-            currentAutopayMode.DrawSettingsWindow();
+            State.currentAutopayMode.DrawSettingsWindow();
 
             if (GUILayout.Button("Change Skin"))
             {
                 //SkinsLibrary.SetCurrent(SkinsLibrary.List.Keys.ElementAt((SkinsLibrary.List.Values.ToList().IndexOf(SkinsLibrary.CurrentSkin) + 1)%SkinsLibrary.List.Count));
-                SelectedSkin++;
-                SelectedSkin %= skins.Count;
-                SelectSkin(SelectedSkin);
+                State.SelectedSkin++;
+                State.SelectedSkin %= skins.Count;
+                State.SelectSkin(State.SelectedSkin);
             }
 
             GUILayout.EndVertical();
@@ -434,54 +476,34 @@ namespace BROKE
             GUILayout.EndHorizontal();
         }
 
-        public void SelectSkin(int skinID)
+        public bool FMDisabled (IMultiFundingModifier toCheck)
         {
-            /*if (skinID == 0)
-                SkinsLibrary.SetCurrent(SkinsLibrary.DefSkinType.KSP);
-            else if (skinID == 1)*/
-                SkinsLibrary.SetCurrent(SkinsLibrary.DefSkinType.Unity);
-            /*else if (skinID == 2)
-            {
-                if (!SkinsLibrary.SkinExists("Mixed"))
-                {
-                    GUISkin mixedSkin = SkinsLibrary.CopySkin(SkinsLibrary.DefSkinType.Unity);
-                    mixedSkin.window = HighLogic.Skin.window;
-                    SkinsLibrary.AddSkin("Mixed", mixedSkin, false);
-                }
-                SkinsLibrary.SetCurrent("Mixed");
-            }
-            */
-            SelectedSkin = skinID;
+            return State.disabledFundingModifiers.Contains(toCheck.GetConfigName());
         }
 
-        public bool FMDisabled(IMultiFundingModifier toCheck)
+        public bool FMDisabled (string toCheck)
         {
-            return disabledFundingModifiers.Contains(toCheck.GetConfigName());
+            return State.disabledFundingModifiers.Contains(toCheck);
         }
 
-        public bool FMDisabled(string toCheck)
+        public void DisableFundingModifier (IMultiFundingModifier toDisable)
         {
-            return disabledFundingModifiers.Contains(toCheck);
-        }
-
-        public void DisableFundingModifier(IMultiFundingModifier toDisable)
-        {
-            disabledFundingModifiers.AddUnique(toDisable.GetConfigName());
+            State.disabledFundingModifiers.AddUnique(toDisable.GetConfigName());
             toDisable.OnDisabled();
         }
 
-        public void EnableFundingModifier(IMultiFundingModifier toEnable)
+        public void EnableFundingModifier (IMultiFundingModifier toEnable)
         {
-            disabledFundingModifiers.Remove(toEnable.GetConfigName());
+            State.disabledFundingModifiers.Remove(toEnable.GetConfigName());
             toEnable.OnEnabled();
         }
 
-        public void NewDay()
+        public void NewDay ()
         {
-            paymentHistory.ClearOneYearAgo();
+            State.paymentHistory.ClearOneYearAgo();
             //Update every FundingModifier
             LogFormatted_DebugOnly("New Day! " + KSPUtil.PrintDate((int)Planetarium.GetUniversalTime(), true, true));
-            foreach(IMultiFundingModifier fundingMod in fundingModifiers)
+            foreach (IMultiFundingModifier fundingMod in State.fundingModifiers)
             {
                 if (!FMDisabled(fundingMod))
                 {
@@ -490,41 +512,41 @@ namespace BROKE
             }
         }
 
-        public void NewQuarter()
+        public void NewQuarter ()
         {
             //Calculate quarterly expenses and display expense report
             LogFormatted_DebugOnly("New Quarter! " + KSPUtil.PrintDate((int)Planetarium.GetUniversalTime(), true, true));
-            foreach (IMultiFundingModifier fundingMod in fundingModifiers)
+            foreach (IMultiFundingModifier fundingMod in State.fundingModifiers)
             {
                 if (!FMDisabled(fundingMod))
                 {
-                    InvoiceItems.AddRange(fundingMod.ProcessQuarterly());
+                    State.InvoiceItems.AddRange(fundingMod.ProcessQuarterly());
                 }
             }
         }
 
-        public void NewYear()
+        public void NewYear ()
         {
             //Calculate yearly expenses and display expense report
             LogFormatted_DebugOnly("New Year! " + KSPUtil.PrintDate((int)Planetarium.GetUniversalTime(), true, true));
-            foreach (IMultiFundingModifier fundingMod in fundingModifiers)
+            foreach (IMultiFundingModifier fundingMod in State.fundingModifiers)
             {
                 if (!FMDisabled(fundingMod))
                 {
-                    InvoiceItems.AddRange(fundingMod.ProcessYearly());
+                    State.InvoiceItems.AddRange(fundingMod.ProcessYearly());
                 }
             }
         }
 
-        private void DisplayExpenseReport()
+        private void DisplayExpenseReport ()
         {
             currentView = BROKEView.ExpenseReport;
             Debug.Log("Revenue:");
-            foreach (var invoiceItem in InvoiceItems)
+            foreach (var invoiceItem in State.InvoiceItems)
                 Debug.Log(invoiceItem.Modifier.GetName() + ": " + invoiceItem.ItemName + ": " + invoiceItem.Revenue);
 
             Debug.Log("Expenses:");
-            foreach (var invoiceItem in InvoiceItems)
+            foreach (var invoiceItem in State.InvoiceItems)
                 Debug.Log(invoiceItem.Modifier.GetName() + ": " + invoiceItem.ItemName + ": " + invoiceItem.Expenses);
 
             this.Visible = true;
@@ -534,16 +556,16 @@ namespace BROKE
             //SkinsLibrary.SetCurrent(SkinsLibrary.DefSkinType.Unity);
         }
 
-        public void CashInRevenues(IEnumerable<InvoiceItem> itemsToBalance)
+        public void CashInRevenues (IEnumerable<InvoiceItem> itemsToBalance)
         {
             foreach (var invoiceItem in itemsToBalance)
             {
                 AdjustFunds(invoiceItem.Revenue);
-                paymentHistory.Record(invoiceItem.WithdrawRevenue());
+                State.paymentHistory.Record(invoiceItem.WithdrawRevenue());
             }
         }
 
-        public double PayExpenses(IEnumerable<InvoiceItem> invoicesToPay, double MaxToPay = -1)
+        public double PayExpenses (IEnumerable<InvoiceItem> invoicesToPay, double MaxToPay = -1)
         {
             LogFormatted_DebugOnly("Paying Expenses!");
             if (HighLogic.CurrentGame.Mode != Game.Modes.CAREER) //No funds outside of career
@@ -560,45 +582,45 @@ namespace BROKE
                 toPay = Math.Min(toPay, RemainingDebt());
             }
             AdjustFunds(-toPay);
-            foreach(var item in invoicesToPay)
+            foreach (var item in invoicesToPay)
             {
                 if (toPay > 0)
                 {
                     var amountToPay = Math.Min(item.Expenses, toPay);
-                    paymentHistory.Record(item.PayInvoice(amountToPay));
+                    State.paymentHistory.Record(item.PayInvoice(amountToPay));
                     toPay -= amountToPay;
                 }
             }
-            InvoiceItems.RemoveAll(item => item.Revenue == 0 && item.Expenses == 0);
+            State.InvoiceItems.RemoveAll(item => item.Revenue == 0 && item.Expenses == 0);
             return RemainingDebt();
         }
 
 
         //Shamelessly modified from this StackOverflow question/answer: http://stackoverflow.com/questions/5411694/get-all-inherited-classes-of-an-abstract-class
         //http://stackoverflow.com/questions/26733/getting-all-types-that-implement-an-interface
-        private IEnumerable<T> GetInstanceOfAllImplementingClasses<T>()
+        private IEnumerable<T> GetInstanceOfAllImplementingClasses<T> ()
             where T : class
         {
             Type type = typeof(T);
             var instances = new List<T>();
             IEnumerable<Type> types = AppDomain.CurrentDomain.GetAssemblies()
             .SelectMany(s =>
+            {
+                try
                 {
-                    try
+                    return s.GetTypes();
+                }
+                catch (ReflectionTypeLoadException ex)
+                {
+                    LogFormatted("Failed to load types from asssembly");
+                    Debug.LogException(ex);
+                    foreach (var subException in ex.LoaderExceptions)
                     {
-                        return s.GetTypes();
+                        Debug.LogException(subException);
                     }
-                    catch (ReflectionTypeLoadException ex)
-                    {
-                        LogFormatted("Failed to load types from asssembly");
-                        Debug.LogException(ex);
-                        foreach (var subException in ex.LoaderExceptions)
-                        {
-                            Debug.LogException(subException);
-                        }
-                        return Enumerable.Empty<Type>();
-                    }
-                })
+                    return Enumerable.Empty<Type>();
+                }
+            })
             .Where(p => type.IsAssignableFrom(p) && !p.IsInterface && !p.IsAbstract);
             List<T> fundingMods = new List<T>();
 
@@ -616,7 +638,7 @@ namespace BROKE
             return instances;
         }
 
-        public List<IMultiFundingModifier> GetFundingModifiers()
+        public List<IMultiFundingModifier> GetFundingModifiers ()
         {
             List<IMultiFundingModifier> modifiers = new List<IMultiFundingModifier>();
             // We need this cast here because .NET doesn't have co/contra-variance until 4.0 and we're stuck on 3.5
@@ -626,7 +648,7 @@ namespace BROKE
             return modifiers;
         }
 
-        public static void AddOrCreateInDictionary(Dictionary<string, double> dict, string key, double value)
+        public static void AddOrCreateInDictionary (Dictionary<string, double> dict, string key, double value)
         {
             if (!dict.ContainsKey(key))
                 dict.Add(key, value);
@@ -634,7 +656,7 @@ namespace BROKE
                 dict[key] += value;
         }
 
-        public static double AdjustFunds(double fundsToAdd, TransactionReasons reason = TransactionReasons.None)
+        public static double AdjustFunds (double fundsToAdd, TransactionReasons reason = TransactionReasons.None)
         {
             if (HighLogic.CurrentGame.Mode == Game.Modes.CAREER)
             {

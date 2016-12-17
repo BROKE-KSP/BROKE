@@ -452,13 +452,13 @@ namespace BROKE
             GUILayout.Label("Autopay settings:");
             State.currentAutopayMode.DrawSettingsWindow();
 
-            if (GUILayout.Button("Change Skin"))
-            {
-                //SkinsLibrary.SetCurrent(SkinsLibrary.List.Keys.ElementAt((SkinsLibrary.List.Values.ToList().IndexOf(SkinsLibrary.CurrentSkin) + 1)%SkinsLibrary.List.Count));
-                State.SelectedSkin++;
-                State.SelectedSkin %= skins.Count;
-                State.SelectSkin(State.SelectedSkin);
-            }
+            //if (GUILayout.Button("Change Skin"))
+            //{
+            //    //SkinsLibrary.SetCurrent(SkinsLibrary.List.Keys.ElementAt((SkinsLibrary.List.Values.ToList().IndexOf(SkinsLibrary.CurrentSkin) + 1)%SkinsLibrary.List.Count));
+            //    State.SelectedSkin++;
+            //    State.SelectedSkin %= skins.Count;
+            //    State.SelectSkin(State.SelectedSkin);
+            //}
 
             GUILayout.EndVertical();
 
@@ -520,7 +520,11 @@ namespace BROKE
             {
                 if (!FMDisabled(fundingMod))
                 {
-                    State.InvoiceItems.AddRange(fundingMod.ProcessQuarterly());
+                    IEnumerable<InvoiceItem> invoices = fundingMod.ProcessQuarterly();
+                    if (invoices != null)
+                    {
+                        State.InvoiceItems.AddRange(fundingMod.ProcessQuarterly());
+                    }
                 }
             }
         }
@@ -533,7 +537,11 @@ namespace BROKE
             {
                 if (!FMDisabled(fundingMod))
                 {
-                    State.InvoiceItems.AddRange(fundingMod.ProcessYearly());
+                    IEnumerable<InvoiceItem> invoices = fundingMod.ProcessYearly();
+                    if (invoices != null)
+                    {
+                        State.InvoiceItems.AddRange(invoices);
+                    }
                 }
             }
         }
